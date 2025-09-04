@@ -257,25 +257,25 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .attr('y2', (d) => (typeof d.target === 'string' ? 0 : d.target.y ?? 0))
 
       // Viewport 내 소프트 클램핑으로 초기 이탈 방지
-      const pad = 20
+      // Remove padding constraints to allow nodes to move freely
       nodeSel
         .attr('cx', (d) => {
           // 초기값이 없으면 중앙 근처에 랜덤 배치
           if (d.x === undefined) {
             d.x = W / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
           }
-          return d.x = Math.max(pad, Math.min(W - pad, d.x))
+          return d.x ?? W / 2
         })
         .attr('cy', (d) => {
           // 초기값이 없으면 중앙 근처에 랜덤 배치  
           if (d.y === undefined) {
             d.y = H / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
           }
-          return d.y = Math.max(pad, Math.min(H - pad, d.y))
+          return d.y ?? H / 2
         })
       labelSel
-        .attr('x', (d) => Math.max(pad, Math.min(W - pad, (d.x ?? W / 2) + 10)))
-        .attr('y', (d) => Math.max(pad, Math.min(H - pad, (d.y ?? H / 2) + 4)))
+        .attr('x', (d) => (d.x ?? W / 2) + 10)
+        .attr('y', (d) => (d.y ?? H / 2) + 4)
 
   // 첫 진입 렌더 안정화: 원래는 1틱 이후 페이드인을 했으나
   // 일부 환경에서 tick이 발생하지 않아 영구 투명해지는 이슈가 있어 제거
