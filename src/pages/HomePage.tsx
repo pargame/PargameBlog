@@ -25,7 +25,10 @@ const HomePage: React.FC = () => {
                 <Link to={`/posts/${post.slug}`}>{post.meta.title}</Link>
               </h3>
               {post.meta.excerpt ? <p>{post.meta.excerpt}</p> : null}
-              <small>{post.meta.date}</small>
+              <small>
+                {post.meta.date}
+                {post.meta.author ? ` · ${post.meta.author}` : null}
+              </small>
             </div>
           ))
         })()}

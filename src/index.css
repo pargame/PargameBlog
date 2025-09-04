@@ -46,13 +46,13 @@ a:hover { color: #c7d6ff; }
 
 code, pre { font-family: var(--font-mono); font-size: 0.95em; }
 pre {
-  background: #0c121b;
+  background: transparent; /* remove filled background */
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 1rem;
   overflow: auto;
 }
-code { background: rgba(255,255,255,0.06); padding: .15rem .35rem; border-radius: 6px; }
+code { background: transparent; padding: 0; border-radius: 0; }
 
 /* Layout */
 .page {
@@ -101,6 +101,87 @@ code { background: rgba(255,255,255,0.06); padding: .15rem .35rem; border-radius
 .about-content p, .about-content ul { color: var(--text-2); }
 .about-content ul { margin-left: 1rem; }
 .about-content li { margin-bottom: .4rem; }
+
+/* GraphPage UI */
+.grid.buttons { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1rem; }
+.pill {
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,0.04);
+  color: var(--text-1);
+  border-radius: 999px;
+  padding: .5rem .9rem;
+  cursor: pointer;
+}
+.pill:hover { background: var(--accent-weak); }
+.pill.pill-lg { font-size: 1.05rem; padding: .75rem 1.1rem; }
+
+.modal-backdrop {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.5);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 50;
+}
+.modal {
+  width: min(1200px, 96vw);
+  height: min(85vh, 820px);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.modal-header { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1rem; border-bottom: 1px solid var(--border); }
+/* Allow flex child to actually shrink to container height and clip graph within */
+.modal-body { padding: 1rem; color: var(--text-2); flex: 1; min-height: 0; overflow: hidden; }
+.icon { background: transparent; border: none; color: var(--text-2); cursor: pointer; font-size: 1.1rem; }
+.icon:hover { color: var(--text-1); }
+
+/* Global right-side insight drawer (on backdrop level) */
+.insight-drawer {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  bottom: 1.25rem;
+  width: 0;
+  background: var(--surface);
+  border: none; /* remove border line */
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  transition: width .25s ease;
+  display: flex;
+  flex-direction: column;
+}
+.insight-drawer.open { width: 50vw; }
+.insight-content { display: flex; flex-direction: column; height: 100%; }
+.insight-content header { display: flex; align-items: center; justify-content: space-between; padding: .6rem .8rem; border-bottom: 1px solid var(--border); }
+.insight-content h3 { margin: 0; font-size: 1rem; }
+.insight-scroll {
+  padding: .8rem;
+  overflow: auto;
+  height: 100%;
+  /* Hide scrollbars across browsers while keeping scroll functionality */
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge legacy */
+}
+.insight-scroll::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent; }
+/* Also hide scrollbars inside code blocks within the drawer */
+.insight-scroll pre { scrollbar-width: none; -ms-overflow-style: none; }
+.insight-scroll pre::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent; }
+.wikilink { color: var(--link); font-weight: 600; }
+.insight-empty { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-2); font-style: italic; }
+
+/* Graph collections layout */
+.graph-collections {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 30vh;
+}
+.graph-collections .grid.buttons {
+  justify-content: center;
+}
 
 /* Responsive */
 @media (max-width: 768px) {

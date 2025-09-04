@@ -3,7 +3,7 @@ import React from 'react';
 const AboutPage: React.FC = () => {
   return (
     <div className="page">
-      <div className="about-section">
+      <div className="content-section about-section">
         <h1>소개</h1>
         <div className="about-content">
           <h2>Pargame에 대해</h2>

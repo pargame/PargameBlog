@@ -2,6 +2,7 @@ import { Link, Navigate, Route, BrowserRouter as Router, Routes } from 'react-ro
 import Footer from './components/Footer'
 import HomePage from './pages/HomePage'
 import AboutPage from './pages/AboutPage'
+import GraphPage from './pages/GraphPage'
 import PostPage from './pages/PostPage'
 import './App.css'
 
@@ -35,6 +36,11 @@ function App() {
                   Abuot Me
                 </Link>
               </li>
+              <li className="nav-item">
+                <Link to="/graph" className="nav-link">
+                  Graph
+                </Link>
+              </li>
             </ul>
           </div>
         </nav>
@@ -43,6 +49,7 @@ function App() {
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
+            <Route path="/graph" element={<GraphPage />} />
             <Route path="/posts/:slug" element={<PostPage />} />
             {/* dev에서 /PargameBlog/* 로 접근한 경우 홈으로 리다이렉트 */}
             {import.meta.env.DEV && (

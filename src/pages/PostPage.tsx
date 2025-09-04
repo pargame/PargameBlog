@@ -18,15 +18,18 @@ const PostPage: React.FC = () => {
   }
 
   return (
-    <article className="page content-section">
+    <div className="page content-section">
       <header className="post-header">
         <h1>{post.meta.title}</h1>
-        <small>{post.meta.date}</small>
+        <small>
+          {post.meta.date}
+          {post.meta.author ? ` · ${post.meta.author}` : null}
+        </small>
       </header>
       <div className="post-body">
         <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
       </div>
-    </article>
+    </div>
   )
 }
 

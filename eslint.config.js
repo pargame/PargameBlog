@@ -25,7 +25,9 @@ export default defineConfig([
       },
     },
     rules: {
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+  // Use TS-aware rule and allow underscore-prefixed args
+  'no-unused-vars': 'off',
+  '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^[A-Z_]' }],
   'sort-imports': ['warn', { ignoreDeclarationSort: true, allowSeparatedGroups: true }],
     },
   },

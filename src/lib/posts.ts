@@ -28,6 +28,7 @@ export type PostMeta = {
   title: string
   date: string
   excerpt?: string
+  author?: string
 }
 
 export type Post = {
@@ -38,8 +39,12 @@ export type Post = {
 
 // Eagerly import all markdown files as raw strings (relative to this file)
 // Use Vite's query/import to read files as raw strings (compatible with Vite 7)
-// Try both relative (recommended) and absolute (/src) globs to be resilient
-const rawModules = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
+// Prefer new location: src/content/posts; keep legacy support for src/posts during transition.
+const modulesContentRel = import.meta.glob('../content/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
+const modulesContentAbs = import.meta.glob('/src/content/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
+const modulesLegacyRel = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
+const modulesLegacyAbs = import.meta.glob('/src/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
+const rawModules = { ...modulesLegacyRel, ...modulesLegacyAbs, ...modulesContentRel, ...modulesContentAbs }
 
 let cached: Post[] | null = null
 
@@ -69,6 +74,7 @@ function computePosts(): Post[] {
           title: (data.title as string) || slug,
           date: dateValue,
           excerpt: data.excerpt as string | undefined,
+          author: data.author as string | undefined,
         }
         if (!postsBySlug.has(slug)) {
           const post = { slug, meta, content }
