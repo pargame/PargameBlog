@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
     "predeploy": "npm run build && touch dist/.nojekyll",
-    "deploy": "gh-pages -d dist --dotfiles --remove '.'",
+    "deploy": "gh-pages -d dist --dotfiles",
     "clean-deploy": "git push origin --delete gh-pages || true && npm run deploy"
   },
   "dependencies": {
