@@ -9,7 +9,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "deploy": "npm run build && touch dist/.nojekyll && gh-pages -d dist --dotfiles"
+    "predeploy": "npm run build && touch dist/.nojekyll",
+    "deploy": "gh-pages -d dist --dotfiles --remove '.'",
+    "clean-deploy": "git push origin --delete gh-pages || true && npm run deploy"
   },
   "dependencies": {
     "react": "^19.1.1",
