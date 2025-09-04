@@ -1,5 +1,8 @@
 ## PargameBlog
 
+> 빠른 안내: 새 AI 에이전트/첫 방문자는 우선 docs/00-ai-onboarding.md를 확인하세요.
+> https://github.com/pargame/PargameBlog/blob/main/docs/00-ai-onboarding.md
+
 React + Vite 기반의 개인 블로그 프로젝트입니다. `src/posts/*.md` 마크다운을 읽어 홈에 최신순으로 노출하고, `/posts/:slug`로 상세를 렌더링합니다.
 
 ### 실제 배포(자동) 및 개발 서버
