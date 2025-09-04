@@ -47,7 +47,7 @@ const GraphPage: React.FC = () => {
     <div className="page">
       <div className="hero-section">
         <h1 className="hero-title">Graph</h1>
-        <p className="hero-subtitle">그래프 뷰를 원하는 아카이브를 선택하시면 뷰가 열립니다.</p>
+        <p className="hero-subtitle">그래프와 검색창으로 쉽게 학습하세요!</p>
       </div>
 
       <div className="content-section graph-collections">

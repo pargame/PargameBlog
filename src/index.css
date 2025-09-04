@@ -139,19 +139,21 @@ code { background: transparent; padding: 0; border-radius: 0; }
 
 /* Global right-side insight drawer (on backdrop level) */
 .insight-drawer {
-  position: absolute;
-  top: 1.25rem;
-  right: 1.25rem;
-  bottom: 1.25rem;
+  /* Anchor to viewport so drawer covers exact right half when opened */
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
   width: 0;
   background: var(--surface);
-  border: none; /* remove border line */
-  border-radius: 12px;
+  border: none;
+  border-radius: 0;
   box-shadow: var(--shadow);
   overflow: hidden;
   transition: width .25s ease;
   display: flex;
   flex-direction: column;
+  z-index: 70;
 }
 .insight-drawer.open { width: 50vw; }
 .insight-content { display: flex; flex-direction: column; height: 100%; }
