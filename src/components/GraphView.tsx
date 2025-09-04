@@ -65,17 +65,8 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .classed('graph-svg', true)
 
       // Root group for zoom/pan
-      // Define a clipPath to ensure nothing renders outside SVG bounds
-      const defs = svg.append('defs')
-      defs
-        .append('clipPath')
-        .attr('id', 'graph-clip')
-        .append('rect')
-        .attr('x', 0)
-        .attr('y', 0)
-        .attr('width', W)
-        .attr('height', H)
-
+      // Remove clipPath to allow nodes to move freely beyond SVG boundaries
+      
       // A background rect to capture panning drag events and provide a clean surface
       svg
         .append('rect')
@@ -94,7 +85,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       const gRoot = svg
         .append('g')
         .attr('class', 'zoom-layer')
-        .attr('clip-path', 'url(#graph-clip)')
+        // Remove clip-path to allow free movement
         // 초기 렌더에서 tick이 발생하지 않아도 그래프가 보이도록 즉시 표시
         .style('opacity', 1)
       gRootRef.current = gRoot
@@ -352,12 +343,8 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       }
     }
 
-    // Update-only path: when container resizes, adjust viewBox and clip rect without tearing down
+    // Update-only path: when container resizes, adjust viewBox and background rect
     svg.attr('viewBox', `0 0 ${W} ${H}`)
-    svg
-      .select('defs clipPath#graph-clip rect')
-      .attr('width', W)
-      .attr('height', H)
     svg
       .select('rect.bg-rect')
       .attr('width', W)
