@@ -5,4 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   base: '/PargameBlog/', // GitHub Pages용 base 경로
+  resolve: {
+    alias: {
+      '@': '/src',
+    },
+  },
 })
