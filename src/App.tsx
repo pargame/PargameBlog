@@ -32,7 +32,7 @@ function App() {
             <ul className="nav-menu">
               <li className="nav-item">
                 <Link to="/about" className="nav-link">
-                  소개
+                  Abuot Me
                 </Link>
               </li>
             </ul>

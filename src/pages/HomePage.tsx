@@ -6,8 +6,8 @@ const HomePage: React.FC = () => {
   return (
     <div className="page">
       <div className="hero-section">
-        <h1 className="hero-title">Pargame Blog</h1>
-        <p className="hero-subtitle">개발과 게임에 대한 이야기를 공유하는 공간입니다.</p>
+        <h1 className="hero-title">Pargame's Postings</h1>
+        <p className="hero-subtitle">주제에 상관 없이 글을 올리는 공간입니다.</p>
       </div>
       
       <div className="content-section">
