@@ -132,8 +132,8 @@ code { background: transparent; padding: 0; border-radius: 0; }
   overflow: hidden;
 }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: .9rem 1rem; border-bottom: 1px solid var(--border); }
-/* Allow flex child to actually shrink to container height and clip graph within */
-.modal-body { padding: 1rem; color: var(--text-2); flex: 1; min-height: 0; overflow: hidden; }
+/* Allow flex child to actually shrink to container height and show graph properly */
+.modal-body { padding: 1rem; color: var(--text-2); flex: 1; min-height: 0; overflow: visible; display: flex; flex-direction: column; }
 .icon { background: transparent; border: none; color: var(--text-2); cursor: pointer; font-size: 1.1rem; }
 .icon:hover { color: var(--text-1); }
 

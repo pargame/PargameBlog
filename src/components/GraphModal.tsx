@@ -22,7 +22,7 @@ const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClic
         </button>
       </div>
       <div className="modal-body">
-        <div style={{ height: '100%', minHeight: 360 }}>
+        <div style={{ height: '100%', minHeight: 360, flex: 1, display: 'flex' }}>
           <GraphView
             data={graphData}
             onNodeClick={onNodeClick}
