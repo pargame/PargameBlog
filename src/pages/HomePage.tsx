@@ -1,14 +1,15 @@
 import React, { useMemo } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { getAllPosts } from '../lib/posts';
 
 const HomePage: React.FC = () => {
+  const navigate = useNavigate()
   const posts = useMemo(() => getAllPosts(), [])
   return (
     <div className="page">
       <div className="hero-section">
         <h1 className="hero-title">Pargame's Postings</h1>
-        <p className="hero-subtitle">주제에 상관 없이 글을 올리는 공간입니다.</p>
+        <p className="hero-subtitle">마크다운으로 작성하면 포스팅되는 페이지입니다.</p>
       </div>
       
       <div className="content-section">
@@ -20,9 +21,16 @@ const HomePage: React.FC = () => {
             )
           }
           return posts.map(post => (
-            <div className="post-preview" key={post.slug}>
+            <div
+              className="post-preview"
+              key={post.slug}
+              role="button"
+              tabIndex={0}
+              onClick={() => navigate(`/posts/${post.slug}`)}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(`/posts/${post.slug}`) } }}
+            >
               <h3>
-                <Link to={`/posts/${post.slug}`}>{post.meta.title}</Link>
+                <Link to={`/posts/${post.slug}`} onClick={(e) => { e.stopPropagation() }}>{post.meta.title}</Link>
               </h3>
               {post.meta.excerpt ? <p>{post.meta.excerpt}</p> : null}
               <small>

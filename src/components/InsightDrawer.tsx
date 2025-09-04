@@ -7,14 +7,12 @@ import { getDocFromCollection } from '../lib/doc'
 interface InsightDrawerProps {
   collection: string
   insightId: string | null
-  onClose: () => void
   onWikiLinkClick: (target: string) => void
 }
 
 const InsightDrawer: React.FC<InsightDrawerProps> = ({ 
   collection, 
   insightId, 
-  onClose, 
   onWikiLinkClick 
 }) => {
   const scrollRef = useRef<HTMLDivElement | null>(null)
@@ -39,12 +37,6 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
     return (
       <aside className="insight-drawer open" onClick={e => e.stopPropagation()}>
         <div className="insight-content">
-          <header>
-            <h3>문서를 찾을 수 없습니다</h3>
-            <button className="icon" aria-label="close insight" onClick={onClose}>
-              ✕
-            </button>
-          </header>
           <div className="insight-scroll">
             <div className="insight-empty">요청한 문서를 찾을 수 없습니다.{' '}
               {insightId ? <em>({insightId})</em> : null}
@@ -59,21 +51,11 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
     <aside 
       className="insight-drawer open" 
       onClick={(e) => {
-        // Allow clicks inside wikilink spans (even if nested tags like <strong> or <code>)
-        const target = e.target as HTMLElement
-        const inWikiLink = target.closest?.('.wikilink')
-        if (!inWikiLink) {
-          e.stopPropagation()
-        }
+        // Prevent clicks inside the drawer from bubbling to the backdrop
+        e.stopPropagation()
       }}
     >
       <div className="insight-content">
-        <header>
-          <h3>{doc.title}</h3>
-          <button className="icon" aria-label="close insight" onClick={onClose}>
-            ✕
-          </button>
-        </header>
         <div className="insight-scroll" ref={scrollRef}>
           <ReactMarkdown
             remarkPlugins={[remarkWikiLinkToSpan, remarkGfm]}

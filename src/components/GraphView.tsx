@@ -39,6 +39,24 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   const [showMissing, setShowMissing] = useState(true)
   const showMissingRef = useRef<boolean>(true)
 
+  // Ensure clicks or mouse-downs on the empty graph surface also notify parent
+  const handleWrapperClick = (e: React.MouseEvent) => {
+    const t = e.target as HTMLElement
+    if (!t) return
+    // If the click landed on the SVG element itself or the background rect, treat as background click
+  if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
+      onBackgroundClick?.()
+    }
+  }
+
+  const handleWrapperMouseDown = (e: React.MouseEvent) => {
+    const t = e.target as HTMLElement
+    if (!t) return
+  if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
+      onBackgroundClick?.()
+    }
+  }
+
   // Resize observer to make the graph fill available space
   useEffect(() => {
     const el = wrapRef.current
@@ -368,7 +386,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   // 리사이즈 시 자동 맞춤 제거(인사이트 패널 열고 닫을 때 미세 줌 변화를 방지)
 
   return (
-    <div ref={wrapRef} className="graph-wrap">
+    <div ref={wrapRef} className="graph-wrap" onClick={handleWrapperClick} onMouseDown={handleWrapperMouseDown}>
       <svg ref={svgRef} role="img" aria-label="graph view" />
       
       <div className="graph-controls">

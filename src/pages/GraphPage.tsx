@@ -2,21 +2,20 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { listContentCollections } from '../lib/content'
 import GraphModal from '../components/GraphModal'
 import InsightDrawer from '../components/InsightDrawer'
+import CollectionCard from '../components/CollectionCard'
 
 const GraphPage: React.FC = () => {
   // State
   const collections = useMemo(() => listContentCollections(), [])
   const [opened, setOpened] = useState<string | null>(null)
   const [insightId, setInsightId] = useState<string | null>(null)
-  
-  // Ref for latest insightId value (to avoid closure issues)
   const insightIdRef = useRef<string | null>(null)
 
-  // Sync insightId state with ref
   useEffect(() => {
     insightIdRef.current = insightId
   }, [insightId])
-
+  
+  // Ref for latest insightId value (to avoid closure issues)
   // Event handlers
   const handleCloseModal = useCallback(() => {
     setOpened(null)
@@ -37,8 +36,8 @@ const GraphPage: React.FC = () => {
   }, [])
 
   const handleGraphBackgroundClick = useCallback(() => {
-    const currentInsightId = insightIdRef.current
-    if (currentInsightId) {
+    // Read latest insightId from ref to avoid stale-closure issues inside D3 handlers
+    if (insightIdRef.current) {
       handleCloseInsight()
     }
   }, [handleCloseInsight])
@@ -50,22 +49,19 @@ const GraphPage: React.FC = () => {
         <p className="hero-subtitle">그래프와 검색창으로 쉽게 학습하세요!</p>
       </div>
 
-      <div className="content-section graph-collections">
-        <div className="grid buttons">
-          {collections.length === 0 ? (
-            <p>아직 아카이브가 없습니다. <em>src/content/&lt;name&gt;</em>에 마크다운을 추가해 보세요.</p>
-          ) : (
-            collections.map(name => (
-              <button key={name} className="pill pill-lg" onClick={() => setOpened(name)}>
-                {name}
-              </button>
-            ))
-          )}
-        </div>
+      <div className="content-section">
+        <h2>Graph Archives</h2>
+        {collections.length === 0 ? (
+          <p>아직 아카이브가 없습니다. <em>src/content/&lt;name&gt;</em>에 마크다운을 추가해 보세요.</p>
+        ) : (
+          collections.map(name => (
+            <CollectionCard key={name} name={name} onOpen={setOpened} />
+          ))
+        )}
       </div>
 
       {opened && (
-        <div className="modal-backdrop">
+        <div className="modal-backdrop" onClick={handleCloseModal}>
           <GraphModal 
             key={opened}
             collection={opened}
@@ -76,7 +72,6 @@ const GraphPage: React.FC = () => {
           <InsightDrawer
             collection={opened}
             insightId={insightId}
-            onClose={handleCloseInsight}
             onWikiLinkClick={handleWikiLinkClick}
           />
         </div>
