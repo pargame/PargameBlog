@@ -11,7 +11,7 @@ const HomePage: React.FC = () => {
       </div>
       
       <div className="content-section">
-        <h2>최근 포스트</h2>
+        <h2>Recent Postings</h2>
         {(() => {
           const posts = getAllPosts()
           if (!posts || posts.length === 0) {

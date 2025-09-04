@@ -82,8 +82,12 @@ function computePosts(): Post[] {
       }
     }
     
-    // Sort by date descending
-    posts.sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1))
+    // Sort by date descending (newest first)
+    posts.sort((a, b) => {
+      const dateA = new Date(a.meta.date).getTime()
+      const dateB = new Date(b.meta.date).getTime()
+      return dateB - dateA // newest first
+    })
     
     return posts
   } catch (error) {
