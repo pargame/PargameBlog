@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react'
+import React, { memo, useMemo } from 'react'
 import { buildGraphForCollection } from '../lib/graph'
 import GraphView from './GraphView'
 
@@ -22,7 +22,7 @@ const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClic
         </button>
       </div>
       <div className="modal-body">
-        <div style={{ height: '100%', minHeight: 360, flex: 1, display: 'flex' }}>
+        <div className="graph-modal-body">
           <GraphView
             data={graphData}
             onNodeClick={onNodeClick}
@@ -34,4 +34,4 @@ const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClic
   )
 }
 
-export default GraphModal
+export default memo(GraphModal)

@@ -1,6 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { memo, useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import type { GraphData, GraphNode } from '../types'
+import './GraphView.css'
 
 type NodeDatum = GraphNode & {
   x?: number
@@ -165,7 +166,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         )
       nodeSelRef.current = node
       
-      console.log('[GraphView] Created', node.size(), 'node circles')
+      
 
       const label = gRoot
         .append('g')
@@ -182,7 +183,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .style('font-family', 'Arial, sans-serif')
       labelSelRef.current = label
       
-      console.log('[GraphView] Created', label.size(), 'text labels')
+      
   // Zoom/Pan behavior including background drag to pan
       const zoom = d3
         .zoom<SVGSVGElement, unknown>()
@@ -237,7 +238,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       const labelSel = labelSelRef.current
       
       if (!linkSel || !nodeSel || !labelSel) {
-        console.log('[GraphView] renderPositions: Missing D3 selections')
+        
         return
       }
       
@@ -288,37 +289,31 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       // Live ticking for dynamic layout
       simulation.on('tick', () => {
         ticks++
-        if (ticks <= 5) {
-          console.log(`[GraphView] Tick ${ticks}, sample node positions:`, nodes.slice(0, 2).map(n => ({ id: n.id, x: n.x, y: n.y })))
-        }
         renderPositions()
       })
 
       // 시뮬레이션 상태 확인
-      console.log('[GraphView] Simulation created, alpha:', simulation.alpha())
-      console.log('[GraphView] Force center:', simulation.force('center'))
+      
+      
       
       // 시뮬레이션 강제 시작 - 더 강하게 활성화
       simulation.alpha(1).alphaTarget(0.1).restart()
-      console.log('[GraphView] Simulation restarted with alpha:', simulation.alpha())
+      
       
       // 추가적인 활성화 - 드래그 시작과 같은 효과
       setTimeout(() => {
         simulation.alpha(1).alphaTarget(0.3).restart()
-        console.log('[GraphView] Second activation with alpha:', simulation.alpha())
+        
       }, 100)
       
       // 강제로 첫 번째 렌더링 실행 (tick이 없어도 노드가 보이도록)
-      console.log('[GraphView] Forcing initial render...')
+      
       renderPositions()
 
       // 백업: 시뮬레이션이 작동하지 않는 경우 타이머로 수동 업데이트
       let tickCount = 0
       const manualTick = () => {
         tickCount++
-        if (tickCount <= 5) {
-          console.log(`[GraphView] Manual tick ${tickCount}`)
-        }
         renderPositions()
         if (tickCount < 100) {
           setTimeout(manualTick, 16) // ~60fps
@@ -328,7 +323,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       // 1초 후에도 tick이 없으면 수동 애니메이션 시작
       setTimeout(() => {
         if (ticks === 0) {
-          console.log('[GraphView] No ticks detected, starting manual animation')
+          
           manualTick()
         }
       }, 1000)
@@ -373,29 +368,10 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   // 리사이즈 시 자동 맞춤 제거(인사이트 패널 열고 닫을 때 미세 줌 변화를 방지)
 
   return (
-    <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
+    <div ref={wrapRef} className="graph-wrap">
       <svg ref={svgRef} role="img" aria-label="graph view" />
       
-      <div
-        className="graph-controls"
-        style={{
-          position: 'absolute',
-          top: 8,
-          right: 8,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 8,
-          background: 'rgba(20,24,32,0.6)',
-          backdropFilter: 'blur(4px)',
-          borderRadius: 12,
-          padding: '6px 10px',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-          color: '#c9d4e3',
-          fontSize: 12,
-          userSelect: 'none',
-          pointerEvents: 'auto',
-        }}
-      >
+      <div className="graph-controls">
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
           <input
             type="checkbox"
@@ -410,4 +386,4 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   )
 }
 
-export default GraphView
+export default memo(GraphView)

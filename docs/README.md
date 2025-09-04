@@ -9,15 +9,14 @@
 
 ## 개발 가이드
 - **guide/01-getting-started.md** — 로컬 개발 시작하기
-- **guide/02-scripts.md** — npm 스크립트와 용도 (업데이트됨)
+- **guide/02-scripts.md** — npm 스크립트와 용도
 - **guide/03-quality-gates.md** — 품질 게이트(타입·린트·빌드·스모크) 체크리스트
-- **guide/04-component-development.md** — 컴포넌트 개발 가이드 (새로 추가)
-- **guide/05-content-writing.md** — 콘텐츠 작성 가이드 (새로 추가)
+- **guide/04-component-development.md** — 컴포넌트 개발 가이드
+- **guide/05-content-writing.md** — 콘텐츠 작성 가이드
 
 ## 배포
 - **deployment/01-github-pages.md** — GitHub Pages 자동 배포
 
 ---
 
-**⚠️ 중요**: 항상 00-ai-onboarding.md를 먼저 확인하세요. 
-이 문서는 최신 리팩토링 사항을 모두 반영하고 있습니다.
+**⚠️ 중요**: 항상 00-ai-onboarding.md를 먼저 확인하세요. 최신 리팩토링 사항이 반영됩니다.

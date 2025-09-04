@@ -11,6 +11,12 @@ node_modules
 dist
 dist-ssr
 dist-*/
+build
+.parcel-cache
+.turbo
+.eslintcache
+.vite
+.cache
 *.local
 
 # Env files
@@ -42,5 +48,7 @@ Thumbs.db
 .Trashes
 .fseventsd
 
-#User's private files
-Nothing
+# Local environment overrides
+.env.local
+.env.development.local
+.env.production.local

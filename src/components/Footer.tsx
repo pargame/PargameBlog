@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { memo, useEffect, useState } from 'react'
 
-export default function Footer() {
+function Footer() {
   const [email, setEmail] = useState('')
 
   useEffect(() => {
@@ -33,3 +33,5 @@ export default function Footer() {
     </footer>
   )
 }
+
+export default memo(Footer)

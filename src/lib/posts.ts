@@ -1,30 +1,5 @@
 import type { Post, PostMeta } from '../types'
-
-// Lightweight frontmatter parser (browser-safe, no Buffer)
-function parseFrontmatter(src: string): { data: Record<string, string>; content: string } {
-  const result = { data: {} as Record<string, string>, content: src }
-  const fm = src.match(/^---\s*[\r\n]+([\s\S]*?)^[ \t]*---\s*[\r\n]+/m)
-  if (!fm) return result
-  const yaml = fm[1] || ''
-  // naive YAML: key: value per line (single-line values only)
-  const data: Record<string, string> = {}
-  for (const line of yaml.split(/\r?\n/)) {
-    const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) continue
-    const idx = trimmed.indexOf(':')
-    if (idx === -1) continue
-    const key = trimmed.slice(0, idx).trim()
-    let value = trimmed.slice(idx + 1).trim()
-    // strip wrapping quotes
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
-      value = value.slice(1, -1)
-    }
-    data[key] = value
-  }
-  result.data = data
-  result.content = src.slice(fm[0].length)
-  return result
-}
+import { parseFrontmatter } from './frontmatter'
 
 // Eagerly import all markdown files as raw strings
 // Only from src/posts/ directory (moved back from content/posts)

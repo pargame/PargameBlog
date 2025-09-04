@@ -1,8 +1,9 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { getAllPosts } from '../lib/posts';
 
 const HomePage: React.FC = () => {
+  const posts = useMemo(() => getAllPosts(), [])
   return (
     <div className="page">
       <div className="hero-section">
@@ -13,7 +14,6 @@ const HomePage: React.FC = () => {
       <div className="content-section">
         <h2>Recent Postings</h2>
         {(() => {
-          const posts = getAllPosts()
           if (!posts || posts.length === 0) {
             return (
               <p>아직 게시된 포스트가 없어요. <em>src/posts</em> 폴더에 마크다운 파일(.md)을 추가해 주세요.</p>

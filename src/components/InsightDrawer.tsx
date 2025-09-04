@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react'
+import React, { memo, useEffect, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import remarkWikiLinkToSpan from '../lib/remarkWikiLinkToSpan'
@@ -33,18 +33,40 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
       </aside>
     )
   }
-
   const doc = getDocFromCollection(collection, insightId)
+  
   if (!doc) {
     return (
       <aside className="insight-drawer open" onClick={e => e.stopPropagation()}>
-        <div className="insight-empty">문서를 찾을 수 없습니다.</div>
+        <div className="insight-content">
+          <header>
+            <h3>문서를 찾을 수 없습니다</h3>
+            <button className="icon" aria-label="close insight" onClick={onClose}>
+              ✕
+            </button>
+          </header>
+          <div className="insight-scroll">
+            <div className="insight-empty">요청한 문서를 찾을 수 없습니다.{' '}
+              {insightId ? <em>({insightId})</em> : null}
+            </div>
+          </div>
+        </div>
       </aside>
     )
   }
 
   return (
-    <aside className="insight-drawer open" onClick={e => e.stopPropagation()}>
+    <aside 
+      className="insight-drawer open" 
+      onClick={(e) => {
+        // Allow clicks inside wikilink spans (even if nested tags like <strong> or <code>)
+        const target = e.target as HTMLElement
+        const inWikiLink = target.closest?.('.wikilink')
+        if (!inWikiLink) {
+          e.stopPropagation()
+        }
+      }}
+    >
       <div className="insight-content">
         <header>
           <h3>{doc.title}</h3>
@@ -54,17 +76,48 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
         </header>
         <div className="insight-scroll" ref={scrollRef}>
           <ReactMarkdown
-            remarkPlugins={[remarkGfm, remarkWikiLinkToSpan]}
+            remarkPlugins={[remarkWikiLinkToSpan, remarkGfm]}
             components={{
               a: ({ href, children }) => {
-                // Render our wikilink scheme as a styled span (no navigation)
+                // Helper to recursively extract plain text from children for heuristic
+                const textFromChildren = (node: unknown): string => {
+                  if (node == null) return ''
+                  if (typeof node === 'string') return node
+                  if (Array.isArray(node)) return (node as unknown[]).map(textFromChildren).join('')
+                  if (typeof node === 'object' && node !== null && 'props' in (node as Record<string, unknown>)) {
+                    return textFromChildren((node as { props?: { children?: unknown } }).props?.children)
+                  }
+                  return ''
+                }
+
+                // Determine target either from href (wikilink:Target) or from child text
+                let targetFromHref: string | null = null
                 if (href && href.startsWith('wikilink:')) {
-                  const target = href.slice('wikilink:'.length)
+                  targetFromHref = href.slice('wikilink:'.length)
+                }
+                const labelText = textFromChildren(children).trim()
+
+                const looksLikeWikiToken = (!href || href === '') && !!labelText && /^[A-Za-z0-9_.-]+$/.test(labelText)
+                const isWiki = !!targetFromHref || looksLikeWikiToken
+                const target = targetFromHref || labelText
+
+                if (isWiki && target) {
+                  const missing = !getDocFromCollection(collection, target)
                   return (
                     <span
-                      className="wikilink"
+                      className={`wikilink${missing ? ' missing' : ''}`}
                       data-target={target}
-                      onClick={() => onWikiLinkClick(target)}
+                      title={missing ? '문서를 찾을 수 없습니다' : undefined}
+                      onClick={(e) => {
+                        e.preventDefault()
+                        if (onWikiLinkClick) onWikiLinkClick(target)
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault()
+                          if (onWikiLinkClick) onWikiLinkClick(target)
+                        }
+                      }}
                       role="button"
                       tabIndex={0}
                     >
@@ -72,7 +125,11 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
                     </span>
                   )
                 }
-                return <a href={href || undefined}>{children}</a>
+                // 빈 href는 자동 무시: 앵커 대신 텍스트만 렌더
+                if (!href) {
+                  return <span>{children}</span>
+                }
+                return <a href={href}>{children}</a>
               },
             }}
           >
@@ -84,4 +141,4 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
   )
 }
 
-export default InsightDrawer
+export default memo(InsightDrawer)

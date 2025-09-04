@@ -1,14 +1,5 @@
 import type { GraphData, GraphNode } from '../types'
-
-// Strip top YAML frontmatter if present
-function stripFrontmatter(src: string): string {
-  // 허용: BOM/공백/빈 줄이 앞에 와도 프런트매터 감지
-  const leading = src.match(/^[\ufeff\s]*/)
-  const offset = leading ? leading[0].length : 0
-  const rest = src.slice(offset)
-  const m = rest.match(/^---\s*[\r\n]+[\s\S]*?^[ \t]*---\s*[\r\n]+/m)
-  return m ? rest.slice(m[0].length) : src
-}
+import { stripFrontmatter } from './frontmatter'
 
 // Extract wiki-style links [[Target|Label]] or [[Target#Anchor]]
 function extractWikiLinks(src: string): string[] {

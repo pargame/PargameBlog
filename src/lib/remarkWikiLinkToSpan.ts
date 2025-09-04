@@ -1,49 +1,68 @@
 // Minimal remark plugin: transform text tokens like [[Target]] into link nodes
 // with url scheme 'wikilink:Target'. We'll render them as <span class="wikilink">Target</span>.
 
-type MdastNode = { type?: string; value?: string; url?: string; title?: string | null; children?: MdastNode[] }
+import { visitParents } from 'unist-util-visit-parents'
 
-export default function remarkWikiLinkToSpan() {
-  return (tree: MdastNode) => {
-    function visit(node: MdastNode) {
-      if (!node) return
-      // Process children first
-      if (Array.isArray(node.children)) {
-        // Replace text nodes within this children array if they contain [[...]] tokens
-        const newChildren: MdastNode[] = []
-        for (const child of node.children) {
-          if (child && child.type === 'text' && typeof child.value === 'string' && child.value.includes('[[')) {
-            const parts = splitWikiTokens(child.value)
-            for (const part of parts) newChildren.push(part)
-          } else {
-            visit(child)
-            newChildren.push(child)
-          }
-        }
-        node.children = newChildren
+function remarkWikiLinkToSpan() {
+  return (tree: unknown) => {
+    const root = tree as { type?: string; children?: unknown[] }
+
+    visitParents(root as never, 'text', (node: { value?: unknown }, ancestors: Array<{ type?: string; children?: unknown[] }>) => {
+      if (!node || typeof node.value !== 'string') return
+      if (!node.value.includes('[[')) return
+
+      // Don't process inside existing links
+      if (ancestors.some((a) => a && (a.type === 'link' || a.type === 'linkReference'))) {
+        return
       }
-    }
 
-    function splitWikiTokens(text: string): MdastNode[] {
-      const out: MdastNode[] = []
-      const re = /\[\[([^\]]+)\]\]/g
-      let lastIndex = 0
-  let m: RegExpExecArray | null
-      while ((m = re.exec(text))) {
-        if (m.index > lastIndex) {
-          out.push({ type: 'text', value: text.slice(lastIndex, m.index) })
-        }
-        const raw = m[1].trim()
-        const pipeIndex = raw.indexOf('|')
-        const target = (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw).trim()
-        const label = (pipeIndex >= 0 ? raw.slice(pipeIndex + 1) : target).trim()
-        out.push({ type: 'link', url: `wikilink:${target}`, title: null, children: [{ type: 'text', value: label }] })
-        lastIndex = m.index + m[0].length
-      }
-      if (lastIndex < text.length) out.push({ type: 'text', value: text.slice(lastIndex) })
-      return out
-    }
+  const parent = ancestors[ancestors.length - 1]
+  if (!parent || !Array.isArray(parent.children)) return
 
-  visit(tree)
+  const index = parent.children.indexOf(node as unknown as never)
+      if (index === -1) return
+
+  const newNodes = splitWikiTokens(node.value)
+      
+  ;(parent.children as unknown[]).splice(index, 1, ...newNodes as unknown[])
+    })
+
+    
   }
 }
+
+function splitWikiTokens(text: string): Array<{ type: string; url?: string; title?: null; children?: Array<{ type: string; value: string }>; value?: string }> {
+  const out: Array<{ type: string; url?: string; title?: null; children?: Array<{ type: string; value: string }>; value?: string }> = []
+  const re = /\[\[([^\]]+)\]\]/g
+  let lastIndex = 0
+  let m: RegExpExecArray | null
+  
+  while ((m = re.exec(text))) {
+    if (m.index > lastIndex) {
+      out.push({ type: 'text', value: text.slice(lastIndex, m.index) })
+    }
+    
+    const raw = m[1].trim()
+    const pipeIndex = raw.indexOf('|')
+    const target = (pipeIndex >= 0 ? raw.slice(0, pipeIndex) : raw).trim()
+    const label = (pipeIndex >= 0 ? raw.slice(pipeIndex + 1) : target).trim()
+    
+    const linkNode = { 
+      type: 'link', 
+      url: `wikilink:${target}`, 
+      title: null, 
+      children: [{ type: 'text', value: label }] 
+    }
+    
+    out.push(linkNode)
+    lastIndex = m.index + m[0].length
+  }
+  
+  if (lastIndex < text.length) {
+    out.push({ type: 'text', value: text.slice(lastIndex) })
+  }
+  
+  return out
+}
+
+export default remarkWikiLinkToSpan

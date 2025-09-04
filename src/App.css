@@ -61,3 +61,16 @@
 .github-link { display: inline-flex; vertical-align: middle; margin-left: 4px; color: var(--text-2); }
 .github-link svg { width: 1rem; height: 1rem; display: block; }
 .github-link:hover { color: var(--accent); }
+
+/* Graph modal body wrapper to allow GraphView to fill the space */
+.graph-modal-body {
+  height: 100%;
+  min-height: 360px;
+  flex: 1;
+  display: flex;
+}
+
+/* D3 graph default styling hooks */
+.graph-svg { outline: none; }
+.graph-svg .bg-rect { cursor: grab; }
+.graph-svg:active .bg-rect { cursor: grabbing; }

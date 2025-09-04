@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { listContentCollections } from '../lib/content'
 import GraphModal from '../components/GraphModal'
 import InsightDrawer from '../components/InsightDrawer'
@@ -18,31 +18,30 @@ const GraphPage: React.FC = () => {
   }, [insightId])
 
   // Event handlers
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setOpened(null)
     setInsightId(null)
-  }
+  }, [])
 
-  const handleCloseInsight = () => {
+  const handleCloseInsight = useCallback(() => {
     setInsightId(null)
-  }
+  }, [])
 
-  const handleNodeClick = (node: { id: string; title: string; missing?: boolean }) => {
+  const handleNodeClick = useCallback((node: { id: string; title: string; missing?: boolean }) => {
     if (node.missing) return
     setInsightId(node.id)
-  }
+  }, [])
 
-  const handleWikiLinkClick = (target: string) => {
-    // Allow navigation to missing nodes from insight drawer
+  const handleWikiLinkClick = useCallback((target: string) => {
     setInsightId(target)
-  }
+  }, [])
 
-  const handleGraphBackgroundClick = () => {
+  const handleGraphBackgroundClick = useCallback(() => {
     const currentInsightId = insightIdRef.current
     if (currentInsightId) {
       handleCloseInsight()
     }
-  }
+  }, [handleCloseInsight])
 
   return (
     <div className="page">
@@ -68,6 +67,7 @@ const GraphPage: React.FC = () => {
       {opened && (
         <div className="modal-backdrop">
           <GraphModal 
+            key={opened}
             collection={opened}
             onClose={handleCloseModal}
             onNodeClick={handleNodeClick}

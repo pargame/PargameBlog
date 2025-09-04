@@ -1,9 +1,10 @@
+import { Suspense, lazy } from 'react'
 import { Link, Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import Footer from './components/Footer'
-import HomePage from './pages/HomePage'
-import AboutPage from './pages/AboutPage'
-import GraphPage from './pages/GraphPage'
-import PostPage from './pages/PostPage'
+const HomePage = lazy(() => import('./pages/HomePage'))
+const AboutPage = lazy(() => import('./pages/AboutPage'))
+const GraphPage = lazy(() => import('./pages/GraphPage'))
+const PostPage = lazy(() => import('./pages/PostPage'))
 import './App.css'
 
 function App() {
@@ -46,6 +47,7 @@ function App() {
         </nav>
         
         <main className="main-content">
+          <Suspense fallback={<div className="page"><p>Loading...</p></div>}>
           <Routes>
             <Route path="/" element={<HomePage />} />
             <Route path="/about" element={<AboutPage />} />
@@ -57,6 +59,7 @@ function App() {
             )}
             <Route path="*" element={<div className="page"><p>페이지를 찾을 수 없습니다.</p><Link to="/">홈으로</Link></div>} />
           </Routes>
+          </Suspense>
         </main>
   <Footer />
       </div>

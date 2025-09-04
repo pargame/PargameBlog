@@ -169,7 +169,9 @@ code { background: transparent; padding: 0; border-radius: 0; }
 /* Also hide scrollbars inside code blocks within the drawer */
 .insight-scroll pre { scrollbar-width: none; -ms-overflow-style: none; }
 .insight-scroll pre::-webkit-scrollbar { width: 0 !important; height: 0 !important; background: transparent; }
-.wikilink { color: var(--link); font-weight: 600; }
+.wikilink { color: var(--link); font-weight: 600; cursor: pointer; text-decoration: underline; }
+.wikilink.missing { color: #7a94d6; }
+.wikilink.missing:hover { color: #91a7ef; }
 .insight-empty { height: 100%; display: flex; align-items: center; justify-content: center; color: var(--text-2); font-style: italic; }
 
 /* Graph collections layout */
@@ -202,6 +204,8 @@ code { background: transparent; padding: 0; border-radius: 0; }
     --link: #2563eb;
     --shadow: 0 1px 2px rgba(0,0,0,0.04), 0 8px 24px rgba(0,0,0,0.08);
   }
+  .wikilink.missing { color: #1e40af; }
+  .wikilink.missing:hover { color: #1d4ed8; }
   pre { background: #0f172a; color: #e2e8f0; }
   code { background: rgba(15, 23, 42, 0.08); }
 }
