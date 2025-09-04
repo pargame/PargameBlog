@@ -56,3 +56,8 @@
 .footer-container { max-width: var(--container); margin: 0 auto; padding: 0 1rem; display: flex; gap: 1rem; justify-content: space-between; align-items: center; font-size: .9rem; color: var(--text-2); }
 .footer-item a { color: var(--accent); text-decoration: none; }
 .footer-item a:hover { text-decoration: underline; }
+
+/* GitHub icon link */
+.github-link { display: inline-flex; vertical-align: middle; margin-left: 4px; color: var(--text-2); }
+.github-link svg { width: 1rem; height: 1rem; display: block; }
+.github-link:hover { color: var(--accent); }
