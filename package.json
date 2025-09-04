@@ -9,7 +9,7 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "preview": "vite preview",
-    "deploy": "npm run build && touch dist/.nojekyll && gh-pages -d dist"
+    "deploy": "npm run build && touch dist/.nojekyll && gh-pages -d dist --dotfiles"
   },
   "dependencies": {
     "react": "^19.1.1",
