@@ -1,34 +1,57 @@
-import { useState } from 'react'
-import reactLogo from '@/assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Link, Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
+import HomePage from './pages/HomePage'
+import AboutPage from './pages/AboutPage'
+import PostPage from './pages/PostPage'
 import './App.css'
 
 function App() {
-  const [count, setCount] = useState<number>(0)
-
+  // Vite의 BASE_URL과 동기화 (dev: '/', build: '/PargameBlog/')
+  const baseUrl = import.meta.env.BASE_URL || '/'
+  let basename = baseUrl
+  if (baseUrl === './') {
+    basename = ''
+  } else if (baseUrl.endsWith('/')) {
+    basename = baseUrl.slice(0, -1)
+  }
+  // Dev에서 실수로 /PargameBlog 경로로 접속했을 때도 동작하도록 보정
+  if (import.meta.env.DEV && typeof window !== 'undefined') {
+    if (window.location.pathname.startsWith('/PargameBlog')) {
+      basename = '/PargameBlog'
+    }
+  }
+  
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank" rel="noreferrer">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank" rel="noreferrer">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+    <Router basename={basename}>
+      <div className="app">
+        <nav className="navbar">
+          <div className="nav-container">
+            <Link to="/" className="nav-logo">
+              Pargame Blog
+            </Link>
+            <ul className="nav-menu">
+              <li className="nav-item">
+                <Link to="/about" className="nav-link">
+                  소개
+                </Link>
+              </li>
+            </ul>
+          </div>
+        </nav>
+        
+        <main className="main-content">
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/about" element={<AboutPage />} />
+            <Route path="/posts/:slug" element={<PostPage />} />
+            {/* dev에서 /PargameBlog/* 로 접근한 경우 홈으로 리다이렉트 */}
+            {import.meta.env.DEV && (
+              <Route path="/PargameBlog/*" element={<Navigate to={window.location.pathname.replace(/^\/PargameBlog/, '') || '/'} replace />} />
+            )}
+            <Route path="*" element={<div className="page"><p>페이지를 찾을 수 없습니다.</p><Link to="/">홈으로</Link></div>} />
+          </Routes>
+        </main>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((c) => c + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    </Router>
   )
 }
 

@@ -1,42 +1,52 @@
-#root {
-  max-width: 1280px;
+/* App.css */
+.app { min-height: 100svh; display: flex; flex-direction: column; }
+
+/* Navigation */
+.navbar {
+  position: sticky; top: 0; z-index: 10;
+  backdrop-filter: saturate(140%) blur(6px);
+  background: linear-gradient(180deg, rgba(15, 22, 33, 0.8), rgba(15, 22, 33, 0.6));
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-container {
+  max-width: var(--container);
   margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
+  padding: .75rem 1rem;
+  display: flex; justify-content: space-between; align-items: center; gap: 1rem;
 }
 
-.logo {
-  height: 6em;
-  padding: 1.5em;
-  will-change: filter;
-  transition: filter 300ms;
+.nav-logo {
+  color: var(--text-1);
+  font-size: 1.05rem; font-weight: 700; letter-spacing: .2px;
 }
-.logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+.nav-logo:hover { opacity: .9; }
+
+.nav-menu { display: flex; list-style: none; margin: 0; padding: 0; gap: .25rem; }
+.nav-item { margin: 0; }
+.nav-link {
+  color: var(--text-2);
+  text-decoration: none;
+  font-weight: 600;
+  padding: .5rem .75rem;
+  border-radius: 8px;
+  border: 1px solid transparent;
 }
-.logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+.nav-link:hover { color: var(--text-1); background: var(--accent-weak); border-color: var(--border); }
+
+/* Post page */
+.post-header { margin-bottom: 1rem; }
+.post-body :where(h1,h2,h3) { margin-top: 1.5rem; }
+.post-body :where(pre, code) { font-family: var(--font-mono); }
+
+/* Main */
+.main-content {
+  flex: 1; width: 100%; box-sizing: border-box;
+  max-width: var(--container);
+  margin: 0 auto; padding: 2rem 1rem;
 }
 
-@keyframes logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-
-@media (prefers-reduced-motion: no-preference) {
-  a:nth-of-type(2) .logo {
-    animation: logo-spin infinite 20s linear;
-  }
-}
-
-.card {
-  padding: 2em;
-}
-
-.read-the-docs {
-  color: #888;
+@media (max-width: 768px) {
+  .nav-container { padding: .6rem .75rem; }
+  .main-content { padding: 1.25rem .75rem; }
 }

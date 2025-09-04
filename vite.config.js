@@ -1,13 +1,17 @@
 import { defineConfig } from 'vite'
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
 
 // https://vite.dev/config/
-export default defineConfig({
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+
+export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  base: '/PargameBlog/', // GitHub Pages용 base 경로
+  base: mode === 'production' ? '/PargameBlog/' : '/', // 개발환경에서는 루트 경로
   resolve: {
     alias: {
-      '@': '/src',
+  '@': path.resolve(__dirname, 'src'),
     },
   },
-})
+}))

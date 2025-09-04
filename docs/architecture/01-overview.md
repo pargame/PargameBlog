@@ -1,10 +1,14 @@
 # 아키텍처 개요
 
-이 프로젝트는 Vite와 React를 기반으로 하는 SPA(Single Page Application)입니다.
-주요 폴더 구조는 다음과 같습니다.
+이 프로젝트는 Vite + React Router 기반의 SPA입니다.
 
-- `docs/`: 프로젝트 문서
-- `src/`: 소스 코드
-  - `components/`: 재사용 가능한 UI 컴포넌트
-  - `pages/`: 페이지 단위 컴포넌트
-  - `assets/`: 이미지, 폰트 등 정적 에셋
+핵심 구성
+- `src/lib/posts.ts`: 마크다운 글 로더(브라우저 안전 프런트매터 파서, vite glob)
+- `src/pages/HomePage.tsx`: 글 목록(최신순) 렌더링
+- `src/pages/PostPage.tsx`: 단일 글 렌더링(ReactMarkdown + GFM)
+- `src/App.tsx`: 라우팅 및 네비게이션
+
+폴더 구조 요약
+- `src/posts/`: 마크다운 원문 파일
+- `public/404.html`: GitHub Pages용 SPA 리다이렉트
+- `.github/workflows/deploy.yml`: Pages 배포 파이프라인
