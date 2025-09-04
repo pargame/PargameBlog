@@ -32,6 +32,11 @@ const GraphPage: React.FC = () => {
     setInsightId(node.id)
   }
 
+  const handleWikiLinkClick = (target: string) => {
+    // Allow navigation to missing nodes from insight drawer
+    setInsightId(target)
+  }
+
   const handleGraphBackgroundClick = () => {
     const currentInsightId = insightIdRef.current
     if (currentInsightId) {
@@ -72,7 +77,7 @@ const GraphPage: React.FC = () => {
             collection={opened}
             insightId={insightId}
             onClose={handleCloseInsight}
-            onWikiLinkClick={setInsightId}
+            onWikiLinkClick={handleWikiLinkClick}
           />
         </div>
       )}
