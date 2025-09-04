@@ -31,11 +31,13 @@ jobs:
         run: |
           set -e
           echo "Installing dependencies with npm ci (preferred)…"
-          if ! npm ci; then
+          if ! npm ci --include=optional; then
             echo "npm ci failed (likely due to optional deps bug with Rollup native binaries). Falling back to clean install…"
             rm -rf node_modules package-lock.json
-            npm install --no-audit --no-fund
+            npm install --no-audit --no-fund --include=optional
           fi
+          # Ensure optional platform-specific deps are evaluated for the current runner
+          npm rebuild || true
 
       - name: Verify Rollup native (self-heal)
         run: |
@@ -46,7 +48,12 @@ jobs:
           if [ $rc -ne 0 ]; then
             echo "Rollup native module missing or failed to load. Reinstalling without lockfile…"
             rm -rf node_modules package-lock.json
-            npm install --no-audit --no-fund
+            npm install --no-audit --no-fund --include=optional
+            # Final fallback: explicitly install Linux x64 native package for Rollup
+            if ! node -e "require('rollup/dist/native')"; then
+              echo "Explicitly installing @rollup/rollup-linux-x64-gnu…"
+              npm install -D @rollup/rollup-linux-x64-gnu@^4 --no-audit --no-fund || true
+            fi
             # Verify again (will throw if still broken)
             node -e "require('rollup/dist/native')"
           fi
