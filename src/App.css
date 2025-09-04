@@ -50,3 +50,9 @@
   .nav-container { padding: .6rem .75rem; }
   .main-content { padding: 1.25rem .75rem; }
 }
+
+/* Footer */
+.site-footer { background: transparent; border-top: 1px solid var(--border); padding: .75rem 0; }
+.footer-container { max-width: var(--container); margin: 0 auto; padding: 0 1rem; display: flex; gap: 1rem; justify-content: space-between; align-items: center; font-size: .9rem; color: var(--text-2); }
+.footer-item a { color: var(--accent); text-decoration: none; }
+.footer-item a:hover { text-decoration: underline; }

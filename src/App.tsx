@@ -50,6 +50,20 @@ function App() {
             <Route path="*" element={<div className="page"><p>페이지를 찾을 수 없습니다.</p><Link to="/">홈으로</Link></div>} />
           </Routes>
         </main>
+        <footer className="site-footer">
+          <div className="footer-container">
+            <div className="footer-item">© Pargame (github)</div>
+            <div className="footer-item">Contact Me! <a id="contact-email" href="#">(email)</a></div>
+            <div className="footer-item">Built with Vite + React</div>
+          </div>
+          <script dangerouslySetInnerHTML={{ __html: `(() => {
+            const user = '001201parg';
+            const domain = 'gmail.com';
+            const email = user + '@' + domain;
+            const a = document.getElementById('contact-email');
+            if (a) { a.textContent = email; a.href = 'mailto:' + email; }
+          })()` }} />
+        </footer>
       </div>
     </Router>
   )
