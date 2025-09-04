@@ -1,14 +1,18 @@
-import React from 'react'
+import React, { useMemo } from 'react'
 import { buildGraphForCollection } from '../lib/graph'
 import GraphView from './GraphView'
 
 interface GraphModalProps {
   collection: string
   onClose: () => void
-  onNodeClick: (nodeId: string) => void
+  onNodeClick: (node: { id: string; title: string; missing?: boolean }) => void
+  onGraphBackgroundClick: () => void
 }
 
-const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClick }) => {
+const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick }) => {
+  // Memoize graph data to avoid rebuilding on every render
+  const graphData = useMemo(() => buildGraphForCollection(collection), [collection])
+  
   return (
     <div className="modal" onClick={e => e.stopPropagation()}>
       <div className="modal-header">
@@ -20,8 +24,9 @@ const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClic
       <div className="modal-body">
         <div style={{ height: '100%', minHeight: 360 }}>
           <GraphView
-            data={buildGraphForCollection(collection)}
-            onNodeClick={(node) => onNodeClick(node.id)}
+            data={graphData}
+            onNodeClick={onNodeClick}
+            onBackgroundClick={onGraphBackgroundClick}
           />
         </div>
       </div>

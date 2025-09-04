@@ -1,24 +1,42 @@
-import React, { useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { listContentCollections } from '../lib/content'
 import GraphModal from '../components/GraphModal'
 import InsightDrawer from '../components/InsightDrawer'
 
 const GraphPage: React.FC = () => {
+  // State
   const collections = useMemo(() => listContentCollections(), [])
   const [opened, setOpened] = useState<string | null>(null)
   const [insightId, setInsightId] = useState<string | null>(null)
+  
+  // Ref for latest insightId value (to avoid closure issues)
+  const insightIdRef = useRef<string | null>(null)
 
+  // Sync insightId state with ref
+  useEffect(() => {
+    insightIdRef.current = insightId
+  }, [insightId])
+
+  // Event handlers
   const handleCloseModal = () => {
     setOpened(null)
     setInsightId(null)
   }
 
-  const handleNodeClick = (nodeId: string) => {
-    setInsightId(nodeId)
-  }
-
   const handleCloseInsight = () => {
     setInsightId(null)
+  }
+
+  const handleNodeClick = (node: { id: string; title: string; missing?: boolean }) => {
+    if (node.missing) return
+    setInsightId(node.id)
+  }
+
+  const handleGraphBackgroundClick = () => {
+    const currentInsightId = insightIdRef.current
+    if (currentInsightId) {
+      handleCloseInsight()
+    }
   }
 
   return (
@@ -43,11 +61,12 @@ const GraphPage: React.FC = () => {
       </div>
 
       {opened && (
-        <div className="modal-backdrop" onClick={handleCloseModal}>
+        <div className="modal-backdrop">
           <GraphModal 
             collection={opened}
             onClose={handleCloseModal}
             onNodeClick={handleNodeClick}
+            onGraphBackgroundClick={handleGraphBackgroundClick}
           />
           <InsightDrawer
             collection={opened}

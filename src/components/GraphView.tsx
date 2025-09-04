@@ -21,9 +21,10 @@ type Props = {
   width?: number
   height?: number
   onNodeClick?: (node: { id: string; title: string; missing?: boolean }) => void
+  onBackgroundClick?: () => void
 }
 
-const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeClick }) => {
+const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeClick, onBackgroundClick }) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const [dims, setDims] = useState<{ w: number; h: number }>({ w: width, h: height })
@@ -85,7 +86,11 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .attr('height', H)
         .attr('fill', 'transparent')
         .attr('pointer-events', 'all')
-
+        .on('click', function(event) {
+          event.stopPropagation()
+          onBackgroundClick?.()
+        })
+      
       const gRoot = svg
         .append('g')
         .attr('class', 'zoom-layer')
@@ -116,12 +121,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       const link = gRoot
         .append('g')
         .attr('stroke', colorLink)
-        .attr('stroke-opacity', 0.4)
+        .attr('stroke-opacity', 0.6)
         .selectAll('line')
         .data(links)
         .enter()
         .append('line')
-        .attr('stroke-width', 1.2)
+        .attr('stroke-width', 1.5)
+        .style('opacity', 1)
       linkSelRef.current = link
 
       const node = gRoot
@@ -132,9 +138,17 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .append('circle')
         .attr('r', 8)
         .attr('fill', (d) => colorNode(d.missing))
+        .attr('stroke', '#ffffff')
+        .attr('stroke-width', 1)
         .style('cursor', 'pointer')
+        .style('opacity', 1)
         .on('click', (_evt, d) => {
-          onNodeClick?.({ id: d.id, title: d.title, missing: d.missing })
+          // 이벤트 전파 방지 (배경 클릭으로 처리되지 않도록)
+          _evt.stopPropagation()
+          // 미싱 노드가 아닌 경우에만 인사이트 패널 열기
+          if (!d.missing) {
+            onNodeClick?.({ id: d.id, title: d.title, missing: d.missing })
+          }
         })
         .call(
           d3
@@ -159,6 +173,8 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
             })
         )
       nodeSelRef.current = node
+      
+      console.log('[GraphView] Created', node.size(), 'node circles')
 
       const label = gRoot
         .append('g')
@@ -169,9 +185,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .text((d) => d.title)
         .attr('font-size', 11)
         .attr('fill', '#c9d4e3')
-        .attr('stroke', 'transparent')
+        .attr('stroke', 'none')
         .attr('pointer-events', 'none')
+        .style('opacity', 1)
+        .style('font-family', 'Arial, sans-serif')
       labelSelRef.current = label
+      
+      console.log('[GraphView] Created', label.size(), 'text labels')
   // Zoom/Pan behavior including background drag to pan
       const zoom = d3
         .zoom<SVGSVGElement, unknown>()
@@ -189,10 +209,15 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
           const t = (event as d3.D3ZoomEvent<SVGSVGElement, unknown>).transform
           gRoot.attr('transform', `translate(${t.x},${t.y}) scale(${t.k})`)
         })
+        .on('start', () => {
+          // 드래그 시작 시 배경 클릭과 동일한 처리
+          onBackgroundClick?.()
+        })
 
   // disable native dblclick zoom default by preventing default on dblclick
   svg.on('dblclick.zoom', null)
   svg.call(zoom)
+  
   zoomRef.current = zoom
   // Optional: center initial view (will be adjusted after pre-tick)
   svg.call(zoom.transform, d3.zoomIdentity)
@@ -216,7 +241,16 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       }
 
   const renderPositions = () => {
-      link
+      const linkSel = linkSelRef.current
+      const nodeSel = nodeSelRef.current  
+      const labelSel = labelSelRef.current
+      
+      if (!linkSel || !nodeSel || !labelSel) {
+        console.log('[GraphView] renderPositions: Missing D3 selections')
+        return
+      }
+      
+      linkSel
         .attr('x1', (d) => (typeof d.source === 'string' ? 0 : d.source.x ?? 0))
         .attr('y1', (d) => (typeof d.source === 'string' ? 0 : d.source.y ?? 0))
         .attr('x2', (d) => (typeof d.target === 'string' ? 0 : d.target.x ?? 0))
@@ -224,10 +258,22 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
 
       // Viewport 내 소프트 클램핑으로 초기 이탈 방지
       const pad = 20
-      node
-        .attr('cx', (d) => (d.x = Math.max(pad, Math.min(W - pad, d.x ?? W / 2))))
-        .attr('cy', (d) => (d.y = Math.max(pad, Math.min(H - pad, d.y ?? H / 2))))
-      label
+      nodeSel
+        .attr('cx', (d) => {
+          // 초기값이 없으면 중앙 근처에 랜덤 배치
+          if (d.x === undefined) {
+            d.x = W / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
+          }
+          return d.x = Math.max(pad, Math.min(W - pad, d.x))
+        })
+        .attr('cy', (d) => {
+          // 초기값이 없으면 중앙 근처에 랜덤 배치  
+          if (d.y === undefined) {
+            d.y = H / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
+          }
+          return d.y = Math.max(pad, Math.min(H - pad, d.y))
+        })
+      labelSel
         .attr('x', (d) => Math.max(pad, Math.min(W - pad, (d.x ?? W / 2) + 10)))
         .attr('y', (d) => Math.max(pad, Math.min(H - pad, (d.y ?? H / 2) + 4)))
 
@@ -251,8 +297,50 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       // Live ticking for dynamic layout
       simulation.on('tick', () => {
         ticks++
+        if (ticks <= 5) {
+          console.log(`[GraphView] Tick ${ticks}, sample node positions:`, nodes.slice(0, 2).map(n => ({ id: n.id, x: n.x, y: n.y })))
+        }
         renderPositions()
       })
+
+      // 시뮬레이션 상태 확인
+      console.log('[GraphView] Simulation created, alpha:', simulation.alpha())
+      console.log('[GraphView] Force center:', simulation.force('center'))
+      
+      // 시뮬레이션 강제 시작 - 더 강하게 활성화
+      simulation.alpha(1).alphaTarget(0.1).restart()
+      console.log('[GraphView] Simulation restarted with alpha:', simulation.alpha())
+      
+      // 추가적인 활성화 - 드래그 시작과 같은 효과
+      setTimeout(() => {
+        simulation.alpha(1).alphaTarget(0.3).restart()
+        console.log('[GraphView] Second activation with alpha:', simulation.alpha())
+      }, 100)
+      
+      // 강제로 첫 번째 렌더링 실행 (tick이 없어도 노드가 보이도록)
+      console.log('[GraphView] Forcing initial render...')
+      renderPositions()
+
+      // 백업: 시뮬레이션이 작동하지 않는 경우 타이머로 수동 업데이트
+      let tickCount = 0
+      const manualTick = () => {
+        tickCount++
+        if (tickCount <= 5) {
+          console.log(`[GraphView] Manual tick ${tickCount}`)
+        }
+        renderPositions()
+        if (tickCount < 100) {
+          setTimeout(manualTick, 16) // ~60fps
+        }
+      }
+      
+      // 1초 후에도 tick이 없으면 수동 애니메이션 시작
+      setTimeout(() => {
+        if (ticks === 0) {
+          console.log('[GraphView] No ticks detected, starting manual animation')
+          manualTick()
+        }
+      }, 1000)
 
       initializedRef.current = true
 
@@ -274,7 +362,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       .select('rect.bg-rect')
       .attr('width', W)
       .attr('height', H)
-  }, [dims.w, dims.h, width, height, data, onNodeClick])
+  }, [dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick])
 
   // React to toggle changes without rebuilding D3 scene
   useEffect(() => {
@@ -300,6 +388,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   return (
     <div ref={wrapRef} style={{ position: 'relative', width: '100%', height: '100%' }}>
       <svg ref={svgRef} role="img" aria-label="graph view" />
+      
       <div
         className="graph-controls"
         style={{

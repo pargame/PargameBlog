@@ -29,22 +29,20 @@ function extractWikiLinks(src: string): string[] {
 
 // Build graph for collection under src/content/<collection>
 export function buildGraphForCollection(collection: string): GraphData {
-  // Gather raw markdown modules across content
-  const all = {
-    ...(import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>),
-    ...(import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>),
-  }
-  const prefix1 = `/src/content/${collection}/`
-  const prefix2 = `../content/${collection}/`
-  const entries = Object.entries(all).filter(([p]) => p.includes(prefix1) || p.includes(prefix2))
+  // Gather raw markdown modules across content - using only relative paths for Vite compatibility
+  const all = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+  
+  const collectionPath = `../content/${collection}/`
+  const entries = Object.entries(all).filter(([path]) => path.includes(collectionPath))
 
   const idToTitle = new Map<string, string>()
   const fileById = new Map<string, string>()
-  for (const [path, mod] of entries) {
-    const raw = typeof mod === 'string' ? mod : (mod && (mod as { default?: string }).default ? (mod as { default: string }).default : '')
+  for (const [path, content] of entries) {
+    const raw = typeof content === 'string' ? content : ''
     const file = path.split('/').pop() || ''
     const id = file.replace(/\.md$/, '')
     fileById.set(id, path)
+    
     // Try to read title from frontmatter
     const m = raw.match(/^---[\s\S]*?\n\s*title:\s*(.+?)\n[\s\S]*?---/)
     let title = id
@@ -67,12 +65,13 @@ export function buildGraphForCollection(collection: string): GraphData {
   }
 
   // Parse links to create edges and add missing nodes
-  for (const [path, mod] of entries) {
-    const raw = typeof mod === 'string' ? mod : (mod && (mod as { default?: string }).default ? (mod as { default: string }).default : '')
+  for (const [path, content] of entries) {
+    const raw = typeof content === 'string' ? content : ''
     const file = path.split('/').pop() || ''
     const srcId = file.replace(/\.md$/, '')
     const body = stripFrontmatter(raw)
     const targets = extractWikiLinks(body)
+    
     for (const t of targets) {
       const targetId = t
       if (!nodesMap.has(targetId)) {

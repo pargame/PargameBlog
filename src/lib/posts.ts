@@ -45,10 +45,6 @@ function extractSlugFromPath(path: string): string {
 
 function computePosts(): Post[] {
   try {
-    if (import.meta.env.DEV) {
-      console.log('[posts] matched md files:', Object.keys(allMarkdownModules))
-    }
-    
     const posts: Post[] = []
     const seenSlugs = new Set<string>()
     
@@ -88,10 +84,6 @@ function computePosts(): Post[] {
     
     // Sort by date descending
     posts.sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1))
-    
-    if (import.meta.env.DEV) {
-      console.info('[posts] total parsed:', posts.length)
-    }
     
     return posts
   } catch (error) {
