@@ -37,6 +37,20 @@ jobs:
             npm install --no-audit --no-fund
           fi
 
+      - name: Verify Rollup native (self-heal)
+        run: |
+          set +e
+          node -e "require('rollup/dist/native')"
+          rc=$?
+          set -e
+          if [ $rc -ne 0 ]; then
+            echo "Rollup native module missing or failed to load. Reinstalling without lockfile…"
+            rm -rf node_modules package-lock.json
+            npm install --no-audit --no-fund
+            # Verify again (will throw if still broken)
+            node -e "require('rollup/dist/native')"
+          fi
+
       - name: Typecheck
         run: npm run typecheck
       - name: Lint
