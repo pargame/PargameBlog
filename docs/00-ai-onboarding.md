@@ -7,22 +7,37 @@
 - 콘텐츠: `src/posts/*.md` 마크다운을 읽어 홈 목록 → `/posts/:slug` 상세 렌더링
 - 마크다운 파서: 브라우저 안전한 커스텀 프런트매터 파서 + `react-markdown` + `remark-gfm`
 - 라우팅: BrowserRouter + 동적 `basename`(Vite `BASE_URL` 반영), SPA 404 리다이렉트(`public/404.html`)
+- 그래프 뷰: D3.js 기반 위키링크 그래프 시각화 (`src/content/<collection>` 폴더 단위)
 - CI/CD: GitHub Actions → 타입체크/린트/빌드/Pages 배포 (Linux 러너에서 Rollup 네이티브 패키지 명시 설치)
 
 ## 필수 파일 맵(편집 지점)
 ```
 src/
+  types/
+    index.ts             # 공통 타입 정의 (Post, PostMeta, GraphData 등)
   App.tsx                # 라우팅/네비게이션/레이아웃 진입점 (Footer 포함)
   pages/
     HomePage.tsx         # 글 목록(최신순)
     PostPage.tsx         # 마크다운 상세 렌더링
     AboutPage.tsx        # 소개 페이지
+    GraphPage.tsx        # 그래프 뷰 페이지 (컬렉션 선택)
   lib/
-    posts.ts             # 마크다운 로더(프런트매터 파싱, 정렬, 캐시)
+    posts.ts             # 마크다운 로더(프런트매터 파싱, 정렬, 캐시) - 리팩토링됨
+    graph.ts             # 위키링크 그래프 데이터 생성
+    content.ts           # 콘텐츠 컬렉션 관리
+    doc.ts               # 문서 로더
+    remarkWikiLinkToSpan.ts # 위키링크 마크다운 파서
   components/
     Footer.tsx           # 동적 이메일, GitHub 링크 아이콘
+    GraphView.tsx        # D3.js 그래프 렌더링 컴포넌트
+    GraphModal.tsx       # 그래프 모달 컴포넌트
+    InsightDrawer.tsx    # 인사이트 드로어 컴포넌트
 posts/
-  (없음)                 # 실제 글 파일은 src/posts/ 아래에 존재
+  (실제 파일 위치)          # 블로그 포스트 파일들 (src/posts/ 아래)
+content/
+  Unreal/               # 언리얼 엔진 관련 문서 (그래프 뷰용)
+  Algorithm/            # 알고리즘 관련 문서 (그래프 뷰용) - 예시
+  (기타 주제별 폴더)         # 새로운 주제 폴더 추가 시 자동으로 그래프 뷰에 반영
 public/
   404.html               # SPA 라우팅용
 vite.config.js           # base/alias/react 플러그인
@@ -33,6 +48,7 @@ eslint.config.js         # ESLint 구성
 ## 라우팅 규칙
 - 홈: `/` → `HomePage.tsx`
 - 소개: `/about` → `AboutPage.tsx`
+- 그래프: `/graph` → `GraphPage.tsx`
 - 글 상세: `/posts/:slug` → `PostPage.tsx`
 - 슬러그: 파일명 `YYYY-MM-DD-slug.md`에서 날짜 접두사는 자동 제거되어 라우팅에 쓰임
 
@@ -50,12 +66,26 @@ excerpt: 짧은 요약
 본문은 여기부터 마크다운으로 작성합니다.
 ```
 
+## 그래프 뷰 문서 작성 규칙
+- 위치: `src/content/<collection>/` (예: `src/content/Unreal/`, `src/content/Algorithm/`)
+- 파일명: `PageName.md` (한글명도 지원)
+- 위키링크: `[[대상페이지]]` 또는 `[[대상페이지|표시명]]` 형식 사용
+- 각 컬렉션은 독립적인 그래프로 시각화됨
+- **자동 감지**: 새로운 폴더를 `src/content/` 아래 생성하면 자동으로 그래프 페이지에 나타남
+
 ## 마크다운 로더 동작(중요 구현 포인트)
-- `src/lib/posts.ts`
-  - `import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true })`
+- `src/lib/posts.ts` (리팩토링됨)
+  - `src/posts/**/*.md` 경로에서 블로그 포스트 로드
   - 커스텀 `parseFrontmatter`로 안전하게 키:값 단일 라인 파싱
+  - 중복 슬러그 방지 로직 추가
   - 파일명으로 슬러그 생성, 날짜 내림차순 정렬, 프로덕션 캐시
   - 브라우저 환경 호환(노드 전용 라이브러리 사용 금지)
+- `src/lib/content.ts`
+  - `src/content/**/*.md` 파일을 스캔하여 컬렉션 목록 자동 생성
+  - 새로운 주제 폴더 추가 시 자동으로 감지
+- `src/lib/graph.ts`
+  - `src/content/<collection>` 폴더별 위키링크 그래프 생성
+  - 위키링크 `[[Target]]` 파싱 및 관계 구성
 
 ## 빌드/배포/개발 커맨드
 - 개발 서버: `npm run dev`
@@ -87,6 +117,10 @@ excerpt: 짧은 요약
 ## 새 기능 작업 빠른 가이드
 - 새로운 페이지 추가: `src/pages/...` 생성 → `App.tsx` 라우트에 추가
 - 새 글 작성: `src/posts/YYYY-MM-DD-slug.md` 생성(프런트매터 포함)
+- 그래프 문서 추가: `src/content/<collection>/PageName.md` 생성
+- **새 주제 추가**: `src/content/NewTopic/` 폴더 생성 → 자동으로 그래프 페이지에 반영
+- 컴포넌트 분리: 복잡한 컴포넌트는 `src/components/`로 분리 권장
+- 타입 추가: 공통 타입은 `src/types/index.ts`에 정의
 - 홈 목록 정렬/표시 변경: `src/pages/HomePage.tsx` 또는 `src/lib/posts.ts` 편집
 
 ## 링크 모음

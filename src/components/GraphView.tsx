@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
-import type { GraphData, GraphNode } from '../lib/graph'
+import type { GraphData, GraphNode } from '../types'
 
 type NodeDatum = GraphNode & {
   x?: number

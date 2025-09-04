@@ -1,14 +1,23 @@
 # Docs Index
 
-- 00-ai-onboarding.md — 새로운 AI 에이전트를 위한 빠른 온보딩 요약서(구조·규칙·주의사항)
-- 01-introduction.md — 프로젝트 개요
-- architecture/01-overview.md — 아키텍처 개요 및 핵심 파일
- - coding/
-   - react-fc-template.md — React FC 템플릿 가이드
-- guide/
-  - 01-getting-started.md — 로컬 개발 시작하기
-  - 02-scripts.md — npm 스크립트와 용도
-  - 03-quality-gates.md — 품질 게이트(타입·린트·빌드·스모크) 체크리스트
-- deployment/01-github-pages.md — GitHub Pages 자동 배포
+## 빠른 시작
+- **00-ai-onboarding.md** — 새로운 AI 에이전트를 위한 빠른 온보딩 요약서 (필수 읽기)
+- **01-introduction.md** — 프로젝트 개요
 
-항상 00-ai-onboarding.md를 먼저 확인하세요.
+## 아키텍처
+- **architecture/01-overview.md** — 아키텍처 개요 및 핵심 파일 (리팩토링 반영)
+
+## 개발 가이드
+- **guide/01-getting-started.md** — 로컬 개발 시작하기
+- **guide/02-scripts.md** — npm 스크립트와 용도 (업데이트됨)
+- **guide/03-quality-gates.md** — 품질 게이트(타입·린트·빌드·스모크) 체크리스트
+- **guide/04-component-development.md** — 컴포넌트 개발 가이드 (새로 추가)
+- **guide/05-content-writing.md** — 콘텐츠 작성 가이드 (새로 추가)
+
+## 배포
+- **deployment/01-github-pages.md** — GitHub Pages 자동 배포
+
+---
+
+**⚠️ 중요**: 항상 00-ai-onboarding.md를 먼저 확인하세요. 
+이 문서는 최신 리팩토링 사항을 모두 반영하고 있습니다.

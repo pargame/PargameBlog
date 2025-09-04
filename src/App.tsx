@@ -33,7 +33,7 @@ function App() {
             <ul className="nav-menu">
               <li className="nav-item">
                 <Link to="/about" className="nav-link">
-                  Abuot Me
+                  About Me
                 </Link>
               </li>
               <li className="nav-item">

@@ -1,3 +1,5 @@
+import type { Post, PostMeta } from '../types'
+
 // Lightweight frontmatter parser (browser-safe, no Buffer)
 function parseFrontmatter(src: string): { data: Record<string, string>; content: string } {
   const result = { data: {} as Record<string, string>, content: src }
@@ -24,75 +26,76 @@ function parseFrontmatter(src: string): { data: Record<string, string>; content:
   return result
 }
 
-export type PostMeta = {
-  title: string
-  date: string
-  excerpt?: string
-  author?: string
-}
-
-export type Post = {
-  slug: string
-  meta: PostMeta
-  content: string
-}
-
-// Eagerly import all markdown files as raw strings (relative to this file)
-// Use Vite's query/import to read files as raw strings (compatible with Vite 7)
-// Prefer new location: src/content/posts; keep legacy support for src/posts during transition.
-const modulesContentRel = import.meta.glob('../content/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
-const modulesContentAbs = import.meta.glob('/src/content/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
-const modulesLegacyRel = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
-const modulesLegacyAbs = import.meta.glob('/src/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
-const rawModules = { ...modulesLegacyRel, ...modulesLegacyAbs, ...modulesContentRel, ...modulesContentAbs }
+// Eagerly import all markdown files as raw strings
+// Only from src/posts/ directory (moved back from content/posts)
+const allMarkdownModules = import.meta.glob('../posts/**/*.md', { 
+  query: '?raw', 
+  import: 'default', 
+  eager: true 
+}) as Record<string, string>
 
 let cached: Post[] | null = null
+
+function extractSlugFromPath(path: string): string {
+  const fileName = path.split('/').pop() || ''
+  const base = fileName.replace(/\.md$/, '')
+  // Remove date prefix (YYYY-MM-DD-) if present
+  return base.replace(/^\d{4}-\d{2}-\d{2}-/, '')
+}
 
 function computePosts(): Post[] {
   try {
     if (import.meta.env.DEV) {
-      // Debug: show matched markdown files in dev
-      console.log('[posts] matched md files:', Object.keys(rawModules))
+      console.log('[posts] matched md files:', Object.keys(allMarkdownModules))
     }
-    const postsBySlug = new Map<string, Post>()
+    
     const posts: Post[] = []
-  for (const [path, raw] of Object.entries(rawModules)) {
+    const seenSlugs = new Set<string>()
+    
+    for (const [path, rawContent] of Object.entries(allMarkdownModules)) {
       try {
-    const rawStr = typeof raw === 'string' ? raw : (typeof raw === 'object' && raw && 'default' in raw ? raw.default : undefined)
-        if (typeof rawStr !== 'string') {
-          if (import.meta.env.DEV) console.warn('[posts] unreadable raw module for', path, '=>', typeof raw, raw)
+        if (typeof rawContent !== 'string') {
+          if (import.meta.env.DEV) {
+            console.warn('[posts] unexpected content type for', path, typeof rawContent)
+          }
           continue
         }
-        const fileName = path.split('/').pop() || ''
-        const base = fileName.replace(/\.md$/, '')
-        const slug = base.replace(/^\d{4}-\d{2}-\d{2}-/, '')
-        const parsed = parseFrontmatter(rawStr)
-  const data: Record<string, string> = parsed.data || {}
-        const content = parsed.content || ''
-  const dateValue = typeof data.date === 'string' && data.date.trim() ? data.date : '1970-01-01'
+        
+        const slug = extractSlugFromPath(path)
+        
+        // Skip duplicates (in case same file exists in both locations)
+        if (seenSlugs.has(slug)) {
+          if (import.meta.env.DEV) {
+            console.warn('[posts] duplicate slug detected:', slug, 'from', path)
+          }
+          continue
+        }
+        seenSlugs.add(slug)
+        
+        const { data, content } = parseFrontmatter(rawContent)
         const meta: PostMeta = {
-          title: (data.title as string) || slug,
-          date: dateValue,
-          excerpt: data.excerpt as string | undefined,
-          author: data.author as string | undefined,
+          title: data.title || slug,
+          date: data.date || '1970-01-01',
+          excerpt: data.excerpt,
+          author: data.author,
         }
-        if (!postsBySlug.has(slug)) {
-          const post = { slug, meta, content }
-          postsBySlug.set(slug, post)
-          posts.push(post)
-        }
-      } catch (e) {
-        console.error('[posts] failed to parse', path, e)
+        
+        posts.push({ slug, meta, content })
+      } catch (error) {
+        console.error('[posts] failed to parse', path, error)
       }
     }
-    // sort by date desc
+    
+    // Sort by date descending
     posts.sort((a, b) => (a.meta.date < b.meta.date ? 1 : -1))
+    
     if (import.meta.env.DEV) {
       console.info('[posts] total parsed:', posts.length)
     }
+    
     return posts
-  } catch (err) {
-    console.error('[posts] Failed to load posts:', err)
+  } catch (error) {
+    console.error('[posts] Failed to load posts:', error)
     return []
   }
 }

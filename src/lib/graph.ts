@@ -1,18 +1,4 @@
-export type GraphNode = {
-  id: string
-  title: string
-  missing?: boolean
-}
-
-export type GraphLink = {
-  source: string
-  target: string
-}
-
-export type GraphData = {
-  nodes: GraphNode[]
-  links: GraphLink[]
-}
+import type { GraphData, GraphNode } from '../types'
 
 // Strip top YAML frontmatter if present
 function stripFrontmatter(src: string): string {
