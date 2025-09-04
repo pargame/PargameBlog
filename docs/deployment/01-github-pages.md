@@ -1,6 +1,6 @@
 # GitHub Pages 배포 (GitHub Actions)
 
-프로덕션 배포는 GitHub Actions가 자동으로 수행합니다. `main` 브랜치에 푸시하면 빌드 후 Pages로 게시됩니다.
+프로덕션 배포는 GitHub Actions가 자동으로 수행합니다. `main` 브랜치에 푸시하면 빌드 후 Pages로 게시됩니다. 로컬 배포 스크립트는 사용하지 않습니다.
 
 ## 파이프라인 개요
 1) Checkout → 2) Node 20 설정 + npm 캐시 → 3) `npm ci` → 4) `npm run typecheck` → 5) `npm run lint` → 6) `npm run build` → 7) Pages 아티팩트 업로드 → 8) Pages 배포
