@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "predeploy": "npm run build && touch dist/.nojekyll",
     "deploy": "gh-pages -d dist --dotfiles",
-    "clean-deploy": "git push origin --delete gh-pages || true && npm run deploy"
+    "deploy:clean": "./deploy.sh"
   },
   "dependencies": {
     "react": "^19.1.1",
