@@ -2,12 +2,17 @@ import { defineConfig } from 'vite'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import react from '@vitejs/plugin-react'
+import { visualizer } from 'rollup-plugin-visualizer'
 
 // https://vite.dev/config/
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 export default defineConfig(({ mode }) => ({
-  plugins: [react()],
+  plugins: [
+    react(),
+    // 분석을 원할 때만 visualizer를 활성화합니다. 실행 예: ANALYZE=true npm run build
+    ...(process.env.ANALYZE === 'true' ? [visualizer({ filename: 'dist/stats.html', gzipSize: true, brotliSize: true })] : [])
+  ],
   base: mode === 'production' ? '/PargameBlog/' : '/', // 개발환경에서는 루트 경로
   resolve: {
     alias: {
