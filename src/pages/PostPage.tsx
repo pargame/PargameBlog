@@ -3,6 +3,7 @@ import logger from '../lib/logger'
 import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { getPostBySlug } from '../lib/posts'
+import markdownToHtml from '../lib/markdownToHtml'
 
 type MarkdownPlugin = unknown
 
@@ -32,6 +33,7 @@ const PostPage: React.FC = () => {
   const { slug } = useParams()
   const post = slug ? getPostBySlug(slug) : undefined
   const [remarkGfm, setRemarkGfm] = useState<MarkdownPlugin | null>(null)
+  const [html, setHtml] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -47,6 +49,23 @@ const PostPage: React.FC = () => {
     })()
     return () => { mounted = false }
   }, [])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      if (!post) return
+      try {
+        const out = await markdownToHtml(post.content)
+        if (!mounted) return
+        setHtml(out)
+      } catch (e) {
+        logger.error('markdownToHtml failed:', e)
+        if (!mounted) return
+        setHtml(null)
+      }
+    })()
+    return () => { mounted = false }
+  }, [post])
 
   if (!post) {
     return (
@@ -67,7 +86,12 @@ const PostPage: React.FC = () => {
         </small>
       </header>
       <div className="post-body">
-        <ReactMarkdown remarkPlugins={remarkGfm ? [remarkGfm] : []}>{post.content}</ReactMarkdown>
+        {/* Prefer sanitized HTML produced by unified pipeline for consistency across content and posts. */}
+        {html ? (
+          <div dangerouslySetInnerHTML={{ __html: html }} />
+        ) : (
+          <ReactMarkdown remarkPlugins={remarkGfm ? [remarkGfm] : []}>{post.content}</ReactMarkdown>
+        )}
       </div>
     </div>
   )
