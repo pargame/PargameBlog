@@ -94,6 +94,44 @@ excerpt: 짧은 요약 (선택사항)
 - `npm run lint`: ESLint 검사
 - `npm run typecheck`: TypeScript 타입 검사
 
+## ⚙️ 누락 문서 생성 스크립트 (create_missing_docs.py)
+
+루트에 있는 `create_missing_docs.py` 스크립트는 `src/content/` 폴더를 스캔하여 위키링크(`[[Page]]` 또는 `[[Target|Alias]]`)로 참조되지만 실제 파일이 없는 문서를 자동으로 생성합니다.
+
+주요 기능
+- `--dry-run`: 생성할 파일 목록만 출력(실제 생성 안 함)
+- `--collection` 또는 `-c`: 특정 컬렉션(폴더)만 검사/생성 (예: `Algorithm`, `UnrealEngine`) — 지정하지 않으면 모든 컬렉션을 검사합니다
+- 별칭 처리: `[[UActionInput|AI]]` 같은 링크는 좌측(타깃) `UActionInput`을 기준으로 파일을 생성합니다
+- 프런트매터 자동 생성: 생성되는 파일의 YAML frontmatter에 `title`을 적절히 채웁니다(참조된 문서가 있으면 해당 문서의 title을 우선 사용, 없으면 링크 타깃을 제목으로 사용)
+
+사용 예제
+
+```bash
+# 전체 컬렉션에서 실제 생성(주의: 파일이 실제로 만들어집니다)
+python3 create_missing_docs.py
+
+# 모든 컬렉션에서 dry-run (생성 예정 목록만 출력)
+python3 create_missing_docs.py --dry-run
+
+# 특정 컬렉션(예: Algorithm)만 검사 — 실제 생성
+python3 create_missing_docs.py -c Algorithm
+
+# 특정 컬렉션 dry-run
+python3 create_missing_docs.py --collection "UnrealEngine" --dry-run
+```
+
+생성 규칙 요약
+- 생성되는 파일명: 링크의 좌측 텍스트 그대로 `Target.md` (예: `[[UActionInput|AI]]` → `UActionInput.md`)
+- 생성 위치: 링크가 참조된 컬렉션 폴더 하위 (`src/content/<컬렉션>/Target.md`)
+- 제목(frontmatter.title): 기존 문서의 title이 있으면 동일하게 사용, 없으면 링크 타깃 텍스트를 사용
+
+권장 워크플로우
+1. 먼저 `--dry-run`으로 어떤 파일이 생성될지 확인하세요.
+2. 결과가 적절하면 `--dry-run` 없이 실행하여 실제 파일을 생성하세요.
+
+스크립트 위치: 저장소 루트의 `create_missing_docs.py` (터미널에서 저장소 루트로 이동 후 실행)
+
+
 ## 🌟 새로운 주제 추가하기
 
 1. **폴더 생성**: `mkdir src/content/NewTopic`

@@ -34,21 +34,16 @@
 - `/graph`: 그래프 뷰 (컬렉션 선택)
 - `/posts/:slug`: 개별 글 페이지
 
+### 역할 매핑 (중요, 유지보수용)
+- PostPage (`/posts/:slug`)는 블로그 포스트 전용으로, 소스는 `src/posts/` (레거시 위치) 또는 권장 위치인 `src/content/posts/`에서 로드됩니다. PostPage는 `src/content/<collection>`의 위키 문서를 직접 참조하지 않습니다.
+- GraphPage (`/graph`)는 위키 문서를 컬렉션별로 시각화하는 뷰이며, 문서 소스는 `src/content/<collection>/` 입니다. GraphPage에서 열리는 문서는 `InsightDrawer`를 통해 렌더링되며 이 경로에서 위키링크 처리 및 네비게이션이 수행됩니다.
+
 ## 폴더 구조
 
 ### 콘텐츠
-- `src/posts/`: 마크다운 원문 파일 (레거시 위치)
-- `src/content/posts/`: 마크다운 원문 파일 (권장 위치)
+- `src/posts/`: 포스팅용 마크다운 원문 파일
 - `src/content/<collection>/`: 그래프 뷰용 위키 문서
 
 ### 배포
 - `public/404.html`: GitHub Pages용 SPA 리다이렉트
 - `.github/workflows/deploy.yml`: Pages 배포 파이프라인
-
-## 주요 개선사항 (리팩토링)
-
-1. **모듈화**: 큰 컴포넌트를 작은 컴포넌트로 분리
-2. **타입 안전성**: 공통 타입 정의 통합
-3. **코드 중복 제거**: posts.ts 로직 단순화
-4. **컴포넌트 분리**: GraphPage의 모달/드로어 로직 분리
-5. **확장성**: 콘텐츠 위치 유연성 및 그래프 뷰 추가

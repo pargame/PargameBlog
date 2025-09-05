@@ -79,7 +79,8 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
                 }
                 const labelText = textFromChildren(children).trim()
 
-                const looksLikeWikiToken = (!href || href === '') && !!labelText && /^[A-Za-z0-9_.-]+$/.test(labelText)
+                // Accept Unicode letters/numbers as valid wiki token text (allows 한글, etc.)
+                const looksLikeWikiToken = (!href || href === '') && !!labelText && /^[\p{L}\p{N}_.-]+$/u.test(labelText)
                 const isWiki = !!targetFromHref || looksLikeWikiToken
                 const target = targetFromHref || labelText
 
