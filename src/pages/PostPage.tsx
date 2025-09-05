@@ -1,12 +1,52 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import logger from '../lib/logger'
 import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 import { getPostBySlug } from '../lib/posts'
+
+type MarkdownPlugin = unknown
+
+function createSafeWrapper(candidate: unknown): MarkdownPlugin | null {
+  if (typeof candidate !== 'function') return null
+  const originalFn = candidate as (...a: unknown[]) => unknown
+  return function safeAttacher(this: unknown, ...args: unknown[]) {
+    // If `this` is not a unified Processor (no `data`), skip attaching the
+    // plugin to avoid runtime TypeErrors. This means GFM features won't be
+    // enabled for this render, but it prevents the page from crashing.
+    const processorLike = this as unknown as { data?: unknown }
+      if (!processorLike || typeof processorLike.data !== 'function') {
+        // silently skip attaching remark-gfm when `this` is not a unified
+        // processor (prevents noisy logs in StrictMode double-invokes).
+        return function () { return function noopTransformer(tree: unknown) { return tree } }
+      }
+    try {
+      return originalFn.apply(this, args)
+    } catch (e) {
+      logger.error('remark-gfm plugin threw during attach:', e)
+      return function () { return function noopTransformer(tree: unknown) { return tree } }
+    }
+  }
+}
 
 const PostPage: React.FC = () => {
   const { slug } = useParams()
   const post = slug ? getPostBySlug(slug) : undefined
+  const [remarkGfm, setRemarkGfm] = useState<MarkdownPlugin | null>(null)
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const mod = await import('remark-gfm')
+        const candidate = (mod as unknown as Record<string, unknown>).default ?? mod
+        const wrapped = createSafeWrapper(candidate)
+        if (mounted) setRemarkGfm(wrapped)
+      } catch {
+        if (mounted) setRemarkGfm(null)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
 
   if (!post) {
     return (
@@ -27,7 +67,7 @@ const PostPage: React.FC = () => {
         </small>
       </header>
       <div className="post-body">
-        <ReactMarkdown remarkPlugins={[remarkGfm]}>{post.content}</ReactMarkdown>
+        <ReactMarkdown remarkPlugins={remarkGfm ? [remarkGfm] : []}>{post.content}</ReactMarkdown>
       </div>
     </div>
   )

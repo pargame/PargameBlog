@@ -29,6 +29,15 @@ export default defineConfig([
   'no-unused-vars': 'off',
   '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^[A-Z_]' }],
   'sort-imports': ['warn', { ignoreDeclarationSort: true, allowSeparatedGroups: true }],
+  // Disallow direct use of console in most places — enforce using logger util
+  'no-console': ['error', { allow: ['warn', 'error'] }],
+    },
+  },
+  // Allow console usage inside the logger implementation file so it can forward to console
+  {
+    files: ['src/lib/logger.ts'],
+    rules: {
+      'no-console': 'off',
     },
   },
 ])

@@ -1,11 +1,24 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { getAllPosts } from '../lib/posts';
 import { formatPostDate } from '../lib/date';
+import type { Post } from '../types'
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate()
-  const posts = useMemo(() => getAllPosts(), [])
+  const [posts, setPosts] = useState<Post[] | null>(null)
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const mod = await import('../lib/posts')
+        const all = await mod.loadAllPosts()
+        if (mounted) setPosts(all)
+      } catch {
+        if (mounted) setPosts([])
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
   return (
     <div className="page">
       <div className="hero-section">
@@ -16,6 +29,9 @@ const HomePage: React.FC = () => {
       <div className="content-section">
         <h2>Recent Postings</h2>
         {(() => {
+          if (posts === null) {
+            return <p>포스트 로딩 중…</p>
+          }
           if (!posts || posts.length === 0) {
             return (
               <p>아직 게시된 포스트가 없어요. <em>src/posts</em> 폴더에 마크다운 파일(.md)을 추가해 주세요.</p>

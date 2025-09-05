@@ -1,13 +1,48 @@
-import React, { memo, useEffect, useRef } from 'react'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
+import React, { Suspense, memo, useEffect, useRef, useState } from 'react'
+import logger from '../lib/logger'
+// react-markdown's types vary across versions; accept a loose plugin type locally
+// Loose plugin type using unknown to avoid `any` lint rule; cast to expected runtime shape when used.
+// heavy modules will be dynamically imported below
+const LazyMarkdown = React.lazy(async () => {
+  const mod = await import('react-markdown')
+  return { default: mod.default }
+})
+// light util stays static
 import remarkWikiLinkToSpan from '../lib/remarkWikiLinkToSpan'
-import { getDocFromCollection } from '../lib/doc'
+
+type Doc = { content: string }
 
 interface InsightDrawerProps {
   collection: string
   insightId: string | null
   onWikiLinkClick: (target: string) => void
+}
+
+// Small local error boundary to prevent the entire modal from going blank
+class LocalErrorBoundary extends React.Component<{
+  children: React.ReactNode
+}, { hasError: boolean; error?: Error }> {
+  constructor(props: { children: React.ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(error: Error) {
+    // route via logger so behavior can be controlled by environment
+    logger.error('InsightDrawer render error:', error)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 16 }}>
+          문서 렌더링 중 오류가 발생했습니다.
+        </div>
+      )
+    }
+    return this.props.children as React.ReactElement
+  }
 }
 
 const InsightDrawer: React.FC<InsightDrawerProps> = ({ 
@@ -16,6 +51,50 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
   onWikiLinkClick 
 }) => {
   const scrollRef = useRef<HTMLDivElement | null>(null)
+  const [doc, setDoc] = useState<Doc | null>(null)
+  // No remark-gfm in the drawer to avoid runtime plugin `this` issues;
+  // GFM support remains in the main PostPage which loads remark-gfm safely.
+  const [knownIds, setKnownIds] = useState<Set<string>>(new Set())
+
+  useEffect(() => {
+    let mounted = true
+  ;(async () => {
+  // load doc lazily
+      try {
+        const docMod = await import('../lib/doc')
+        const found = insightId ? docMod.getDocFromCollection(collection, insightId) : null
+        if (mounted) setDoc(found ?? null)
+      } catch {
+        if (mounted) setDoc(null)
+      }
+  // Note: intentionally not loading `remark-gfm` here - it can require
+  // a unified processor `this` which may not be available in this lazy
+  // environment and caused blank modal crashes. PostPage handles GFM.
+    })()
+    return () => { mounted = false }
+  }, [collection, insightId])
+
+  // Load list of available doc ids for this collection to style missing links differently
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      try {
+        const mod = await import('../lib/contentIndex')
+        if (mod.getContentItemsForCollectionAsync) {
+          const items = await mod.getContentItemsForCollectionAsync(collection)
+          if (!mounted) return
+          setKnownIds(new Set(items.map(i => i.slug)))
+        } else {
+          if (!mounted) return
+          setKnownIds(new Set())
+        }
+      } catch {
+        if (!mounted) return
+        setKnownIds(new Set())
+      }
+    })()
+    return () => { mounted = false }
+  }, [collection])
 
   // When switching doc, scroll to top of drawer
   useEffect(() => {
@@ -31,8 +110,6 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
       </aside>
     )
   }
-  const doc = getDocFromCollection(collection, insightId)
-  
   if (!doc) {
     return (
       <aside className="insight-drawer open" onClick={e => e.stopPropagation()}>
@@ -57,10 +134,12 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
     >
       <div className="insight-content">
         <div className="insight-scroll" ref={scrollRef}>
-          <ReactMarkdown
-            remarkPlugins={[remarkWikiLinkToSpan, remarkGfm]}
+          <Suspense fallback={<div style={{ padding: 16 }}>문서 렌더링 준비중…</div>}>
+          <LocalErrorBoundary>
+          <LazyMarkdown
+            remarkPlugins={[remarkWikiLinkToSpan]}
             components={{
-              a: ({ href, children }) => {
+              a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
                 // Helper to recursively extract plain text from children for heuristic
                 const textFromChildren = (node: unknown): string => {
                   if (node == null) return ''
@@ -85,7 +164,9 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
                 const target = targetFromHref || labelText
 
                 if (isWiki && target) {
-                  const missing = !getDocFromCollection(collection, target)
+                  // Determine missing by checking current collection's known ids
+                  const base = target.split('#')[0].trim()
+                  const missing = !knownIds.has(base)
                   return (
                     <span
                       className={`wikilink${missing ? ' missing' : ''}`}
@@ -104,20 +185,22 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
                       role="button"
                       tabIndex={0}
                     >
-                      {children}
+                      {children as React.ReactNode}
                     </span>
                   )
                 }
                 // 빈 href는 자동 무시: 앵커 대신 텍스트만 렌더
                 if (!href) {
-                  return <span>{children}</span>
+                  return <span>{children as React.ReactNode}</span>
                 }
-                return <a href={href}>{children}</a>
+                return <a href={href}>{children as React.ReactNode}</a>
               },
             }}
           >
-            {doc.content}
-          </ReactMarkdown>
+            {doc?.content || ''}
+          </LazyMarkdown>
+          </LocalErrorBoundary>
+          </Suspense>
         </div>
       </div>
     </aside>

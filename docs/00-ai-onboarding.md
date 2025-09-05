@@ -4,10 +4,11 @@
 
 ## 프로젝트 한눈에 보기
 - 타입/스택: Vite 7 + React 19 + TypeScript 5, React Router v7
-- 콘텐츠: `src/posts/*.md` 마크다운을 읽어 홈 목록 → `/posts/:slug` 상세 렌더링
+- 콘텐츠: `src/posts/*.md`(레거시) 또는 `src/content/posts/*.md`를 읽어 홈 목록 → `/posts/:slug` 상세 렌더링
 - 마크다운 파서: 브라우저 안전한 커스텀 프런트매터 파서 + `react-markdown` + `remark-gfm`
 - 라우팅: BrowserRouter + 동적 `basename`(Vite `BASE_URL` 반영), SPA 404 리다이렉트(`public/404.html`)
 - 그래프 뷰: D3.js 기반 위키링크 그래프 시각화 (`src/content/<collection>` 폴더 단위)
+  - 성능: 그래프 빌드는 동적 import(비동기)로 수행되어 초기 청크를 최소화합니다
 - CI/CD: GitHub Actions → 타입체크/린트/빌드/Pages 배포 (Linux 러너에서 Rollup 네이티브 패키지 명시 설치)
 
 ## 필수 파일 맵(편집 지점)
@@ -22,7 +23,7 @@ src/
     AboutPage.tsx        # 소개 페이지
     GraphPage.tsx        # 그래프 뷰 페이지 (컬렉션 선택)
   lib/
-    posts.ts             # 마크다운 로더(프런트매터 파싱, 정렬, 캐시) - 리팩토링됨
+  posts.ts             # 마크다운 로더(프런트매터 파싱, 정렬, 캐시) - 동적 로딩 리팩토링 완료
     graph.ts             # 위키링크 그래프 데이터 생성
     content.ts           # 콘텐츠 컬렉션 관리
     doc.ts               # 문서 로더
@@ -53,8 +54,10 @@ eslint.config.js         # ESLint 구성
 - 슬러그: 파일명 `YYYY-MM-DD-slug.md`에서 날짜 접두사는 자동 제거되어 라우팅에 쓰임
 
 ## 마크다운 글 작성 규칙
-- 위치: `src/posts/`
-- 파일명: `YYYY-MM-DD-slug.md`
+- 위치: `src/content/posts/` 권장(또는 `src/posts/` 레거시 호환)
+- 파일명: 권장: `slug.md` (또는 레거시 호환을 위해 `YYYY-MM-DD-slug.md` 허용)
+- 날짜 표기 권장 방식: `date`는 프런트매터에 명시하세요. 빌드/로더는 frontmatter의 `date`를 우선 사용합니다.
+- 참고: 파일명에 날짜 접두사가 있더라도 내부 로더는 슬러그 생성 시 접두사(`YYYY-MM-DD-`)를 자동 제거합니다. 따라서 날짜를 라우트(slug)에 포함시키지 않습니다.
 - 프런트매터 예시:
 ```markdown
 ---
@@ -75,7 +78,7 @@ excerpt: 짧은 요약
 
 ## 마크다운 로더 동작(중요 구현 포인트)
 - `src/lib/posts.ts` (리팩토링됨)
-  - `src/posts/**/*.md` 경로에서 블로그 포스트 로드
+  - `src/posts/**/*.md` 경로에서 블로그 포스트 로드(동적 import, 프로덕션 캐시)
   - 커스텀 `parseFrontmatter`로 안전하게 키:값 단일 라인 파싱
   - 중복 슬러그 방지 로직 추가
   - 파일명으로 슬러그 생성, 날짜 내림차순 정렬, 프로덕션 캐시
@@ -85,6 +88,16 @@ excerpt: 짧은 요약
   - 새로운 주제 폴더 추가 시 자동으로 감지
 - `src/lib/graph.ts`
   - `src/content/<collection>` 폴더별 위키링크 그래프 생성
+  - Async API(`buildGraphForCollectionAsync`)를 사용해 그래프 데이터 동적 로딩
+  
+## 번들링/성능 모범사례(중요)
+- 무거운 의존성 및 데이터는 모두 동적 import로 분리합니다
+  - posts 검색/로딩: `loadAllPosts()`
+  - content 인덱스: `getContentItemsForCollectionAsync()`
+  - 그래프 빌드: `buildGraphForCollectionAsync()`
+  - 마크다운 렌더러: `react-markdown`/`remark-gfm`은 lazy 로드
+- 페이지/모달은 경량 셸(React.lazy + Suspense)로 유지합니다
+- Vite `manualChunks`는 vendor/d3/markdown 및 주요 컴포넌트 별로 분리되어 있습니다
   - 위키링크 `[[Target]]` 파싱 및 관계 구성
 
 ## 빌드/배포/개발 커맨드
@@ -98,6 +111,7 @@ excerpt: 짧은 요약
 - 설정 파일: `eslint.config.js`
 - 베이스: ESLint/TypeScript/React Hooks + React Refresh(vite) 권장 설정
 - 규칙 예: `no-unused-vars`(대문자/언더스코어 변수 일부 예외), `sort-imports`(선언 순서 무시, 그룹 허용)
+ - any 사용 금지, 동적 import의 에러 처리는 주석으로 빈 블록(no-empty) 방지
 
 ## Vite/라우터 베이스 URL 주의사항
 - `vite.config.js` → prod 에서 `base: '/PargameBlog/'`, dev는 `/`

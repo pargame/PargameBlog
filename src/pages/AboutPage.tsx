@@ -22,7 +22,7 @@ const AboutPage: React.FC = () => {
       </div>
 
       <div className="content-section">
-        <h2>기술 스택</h2>
+        <h2>Pargame's Stacks</h2>
         <div className="post-preview">
           <div className="about-content">
             <ul>
@@ -30,8 +30,8 @@ const AboutPage: React.FC = () => {
               <li>자격: 정보처리기사</li>
               <li>알고리즘/문제해결: 자료구조, 알고리즘 설계 및 최적화</li>
               <li>게임 엔진: Unreal Engine (C++ / 블루프린트)</li>
-              <li>AI / 머신러닝: PyTorch, TensorFlow, NumPy, Pandas, Prompt Engineering</li>
-              <li>데이터 분석·시각화: scikit-learn, Matplotlib, Seaborn</li>
+              <li>AI / 머신러닝: PyTorch, TensorFlow, NumPy, Pandas, Prompt Engineering, Vibe Coding</li>
+              <li>데이터 분석·시각화: Scikit-learn, Matplotlib, Seaborn</li>
               <li>협업 / CI: Git, GitHub, GitHub Actions (브랜치·PR 워크플로우)</li>
             </ul>
           </div>

@@ -31,7 +31,6 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   const [dims, setDims] = useState<{ w: number; h: number }>({ w: width, h: height })
   const initializedRef = useRef(false)
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
-  const gRootRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null)
   const simulationRef = useRef<d3.Simulation<NodeDatum, LinkDatum> | null>(null)
   const nodeSelRef = useRef<d3.Selection<SVGCircleElement, NodeDatum, SVGGElement, unknown> | null>(null)
   const linkSelRef = useRef<d3.Selection<SVGLineElement, LinkDatum, SVGGElement, unknown> | null>(null)
@@ -39,20 +38,17 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   const [showMissing, setShowMissing] = useState(true)
   const showMissingRef = useRef<boolean>(true)
 
-  // Ensure clicks or mouse-downs on the empty graph surface also notify parent
   const handleWrapperClick = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement
     if (!t) return
-    // If the click landed on the SVG element itself or the background rect, treat as background click
-  if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
+    if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
       onBackgroundClick?.()
     }
   }
-
   const handleWrapperMouseDown = (e: React.MouseEvent) => {
     const t = e.target as HTMLElement
     if (!t) return
-  if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
+    if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
       onBackgroundClick?.()
     }
   }
@@ -82,13 +78,12 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .style('width', '100%')
         .style('height', '100%')
         .classed('graph-svg', true)
+  // debug removed
 
-      // Root group for zoom/pan
-      // Remove clipPath to allow nodes to move freely beyond SVG boundaries
-      
-      // A background rect to capture panning drag events and provide a clean surface
+      // Background rect should be inserted first so it sits behind nodes and
+      // captures empty-area clicks while allowing node events to receive pointer events.
       svg
-        .append('rect')
+        .insert('rect', ':first-child')
         .attr('class', 'bg-rect')
         .attr('x', 0)
         .attr('y', 0)
@@ -96,24 +91,41 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .attr('height', H)
         .attr('fill', 'transparent')
         .attr('pointer-events', 'all')
+        .style('cursor', 'default')
         .on('click', function(event) {
           event.stopPropagation()
           onBackgroundClick?.()
         })
-      
+
       const gRoot = svg
         .append('g')
         .attr('class', 'zoom-layer')
-        // Remove clip-path to allow free movement
-        // 초기 렌더에서 tick이 발생하지 않아도 그래프가 보이도록 즉시 표시
         .style('opacity', 1)
-      gRootRef.current = gRoot
-
       const colorNode = (missing?: boolean) => (missing ? '#ff8a8a' : '#9db9ff')
       const colorLink = '#63708a'
 
       const nodes: NodeDatum[] = data.nodes as NodeDatum[]
-      const links: LinkDatum[] = data.links as unknown as LinkDatum[]
+      const rawLinks: LinkDatum[] = data.links as unknown as LinkDatum[]
+      const idToNode = new Map<string, NodeDatum>(nodes.map(n => [n.id, n]))
+  const links: LinkDatum[] = rawLinks.map(l => ({
+        source: (typeof l.source === 'string' ? (idToNode.get(l.source) ?? l.source) : l.source),
+        target: (typeof l.target === 'string' ? (idToNode.get(l.target) ?? l.target) : l.target),
+      }))
+
+  // debug removed
+
+  // Build adjacency map for fast neighbor lookup during hover
+      const adjacency = new Map<string, Set<string>>()
+      nodes.forEach(n => adjacency.set(n.id, new Set([n.id])))
+      links.forEach(l => {
+        const s = typeof l.source === 'string' ? l.source : l.source.id
+        const t = typeof l.target === 'string' ? l.target : l.target.id
+        if (!adjacency.has(s)) adjacency.set(s, new Set())
+        if (!adjacency.has(t)) adjacency.set(t, new Set())
+        adjacency.get(s)!.add(t)
+        adjacency.get(t)!.add(s)
+      })
+  // debug removed
 
       const simulation = d3
         .forceSimulation<NodeDatum>(nodes)
@@ -123,12 +135,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .force('x', d3.forceX(W / 2).strength(0.05))
         .force('y', d3.forceY(H / 2).strength(0.05))
         .force('center', d3.forceCenter(W / 2, H / 2))
-        .velocityDecay(0.4)
+        // increased damping to avoid overshoot; previous regression removed damping feel
+        .velocityDecay(0.6)
         .alpha(1)
         .alphaDecay(0.05)
       simulationRef.current = simulation
 
-      const link = gRoot
+  const link = gRoot
         .append('g')
         .attr('stroke', colorLink)
         .attr('stroke-opacity', 0.6)
@@ -136,9 +149,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .data(links)
         .enter()
         .append('line')
+        .attr('class', 'link')
         .attr('stroke-width', 1.5)
         .style('opacity', 1)
+        // no pointer on edges
+        .style('cursor', 'default')
       linkSelRef.current = link
+  // debug removed
 
       const node = gRoot
         .append('g')
@@ -146,28 +163,26 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .data(nodes)
         .enter()
         .append('circle')
+        .attr('class', 'node')
         .attr('r', 8)
         .attr('fill', (d) => colorNode(d.missing))
         .attr('stroke', '#ffffff')
         .attr('stroke-width', 1)
         .style('cursor', 'pointer')
+        .attr('pointer-events', 'all')
         .style('opacity', 1)
         .on('click', (_evt, d) => {
-          // 이벤트 전파 방지 (배경 클릭으로 처리되지 않도록)
           _evt.stopPropagation()
-          // 미싱 노드가 아닌 경우에만 인사이트 패널 열기
-          if (!d.missing) {
-            onNodeClick?.({ id: d.id, title: d.title, missing: d.missing })
-          }
+          if (!d.missing) onNodeClick?.({ id: d.id, title: d.title, missing: d.missing })
         })
         .call(
           d3
             .drag<SVGCircleElement, NodeDatum>()
             .on('start', (event, d) => {
-              // Prevent background panning while dragging a node
-              const se: unknown = (event as unknown as { sourceEvent?: { stopPropagation?: () => void } }).sourceEvent
-              if (typeof (se as { stopPropagation?: () => void } | undefined)?.stopPropagation === 'function')
-                (se as { stopPropagation: () => void }).stopPropagation()
+              const se = (event as unknown as { sourceEvent?: Event }).sourceEvent
+              if (se && typeof (se as Event).stopPropagation === 'function') {
+                ;(se as Event).stopPropagation()
+              }
               if (!event.active) simulation.alphaTarget(0.3).restart()
               d.fx = d.x ?? null
               d.fy = d.y ?? null
@@ -182,9 +197,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
               d.fy = null
             })
         )
-      nodeSelRef.current = node
-      
-      
+  nodeSelRef.current = node
 
       const label = gRoot
         .append('g')
@@ -192,6 +205,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .data(nodes)
         .enter()
         .append('text')
+        .attr('class', 'label')
         .text((d) => d.title)
         .attr('font-size', 11)
         .attr('fill', '#c9d4e3')
@@ -199,10 +213,9 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .attr('pointer-events', 'none')
         .style('opacity', 1)
         .style('font-family', 'Arial, sans-serif')
-      labelSelRef.current = label
-      
-      
-  // Zoom/Pan behavior including background drag to pan
+  labelSelRef.current = label
+
+      // Zoom/Pan
       const zoom = d3
         .zoom<SVGSVGElement, unknown>()
         .scaleExtent([0.2, 4])
@@ -216,30 +229,101 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
           return false
         })
         .on('zoom', (event) => {
-          const t = (event as d3.D3ZoomEvent<SVGSVGElement, unknown>).transform
-          gRoot.attr('transform', `translate(${t.x},${t.y}) scale(${t.k})`)
+          const tr = (event as d3.D3ZoomEvent<SVGSVGElement, unknown>).transform
+          gRoot.attr('transform', `translate(${tr.x},${tr.y}) scale(${tr.k})`)
         })
-        .on('start', () => {
-          // 드래그 시작 시 배경 클릭과 동일한 처리
-          onBackgroundClick?.()
+  .on('start', (event) => {
+          // Only close the insight panel when a zoom/pan begins on the empty background
+          // (not when starting drag on a node). The zoom sourceEvent tells us the original DOM event.
+          const se = (event as d3.D3ZoomEvent<SVGSVGElement, unknown>).sourceEvent as Event | undefined
+          if (!se || !(se.target instanceof HTMLElement)) return
+          const target = se.target as HTMLElement
+          const isBg = target.classList.contains('bg-rect') || (target.tagName && target.tagName.toLowerCase() === 'svg')
+          // debug removed
+          if (isBg) onBackgroundClick?.()
         })
 
-  // disable native dblclick zoom default by preventing default on dblclick
-  svg.on('dblclick.zoom', null)
-  svg.call(zoom)
-  
-  zoomRef.current = zoom
-  // Optional: center initial view (will be adjusted after pre-tick)
-  svg.call(zoom.transform, d3.zoomIdentity)
+      svg.on('dblclick.zoom', null)
+      svg.call(zoom)
+      zoomRef.current = zoom
+      svg.call(zoom.transform, d3.zoomIdentity)
 
-  let ticks = 0
-  const didCenter = { current: false }
+      let ticks = 0
+      const didCenter = { current: false }
 
-  // Precompute missing id set for visibility control
-  const missingSet = new Set<string>(nodes.filter((n) => n.missing).map((n) => n.id))
+      const missingSet = new Set<string>(nodes.filter((n) => n.missing).map((n) => n.id))
 
-  // Visibility updater reads current toggle from ref
-  const updateVisibility = () => {
+      // Lightweight JS hover handlers: attach both mouseenter and pointerenter
+      // for broader browser compatibility. Use shared handler to avoid
+      // duplicate logic. Similarly attach mouseleave and pointerleave.
+      const handleHoverEnter = (_evt: unknown, d: NodeDatum) => {
+  // hover log removed
+        const related = adjacency.get(d.id) ?? new Set<string>([d.id])
+
+        // Nodes: use native classList for slightly better perf / predictability
+        const nodeEls = nodeSelRef.current?.nodes?.() ?? []
+        nodeEls.forEach((el: Element) => {
+          const ndDatum = (el as unknown as { __data__?: unknown }).__data__
+          const nd: NodeDatum | undefined = typeof ndDatum === 'object' && ndDatum !== null ? (ndDatum as NodeDatum) : undefined
+          if (!nd) return
+          if (related.has(nd.id)) {
+            el.classList.add('active')
+            el.classList.remove('faded')
+          } else {
+            el.classList.add('faded')
+            el.classList.remove('active')
+          }
+        })
+
+        // Labels
+        const labelEls = labelSelRef.current?.nodes?.() ?? []
+        labelEls.forEach((el: Element) => {
+          const ndDatum = (el as unknown as { __data__?: unknown }).__data__
+          const nd: NodeDatum | undefined = typeof ndDatum === 'object' && ndDatum !== null ? (ndDatum as NodeDatum) : undefined
+          if (!nd) return
+          if (related.has(nd.id)) {
+            el.classList.add('active')
+            el.classList.remove('faded')
+          } else {
+            el.classList.add('faded')
+            el.classList.remove('active')
+          }
+        })
+
+        // Links
+        const linkEls = linkSelRef.current?.nodes?.() ?? []
+        linkEls.forEach((el: Element) => {
+          const lkDatum = (el as unknown as { __data__?: unknown }).__data__
+          if (!lkDatum || typeof lkDatum !== 'object') return
+          const lk = lkDatum as { source: string | NodeDatum; target: string | NodeDatum }
+          const s = typeof lk.source === 'string' ? lk.source : lk.source.id
+          const t = typeof lk.target === 'string' ? lk.target : lk.target.id
+          if (related.has(s) && related.has(t)) {
+            el.classList.add('active')
+            el.classList.remove('faded-link')
+          } else {
+            el.classList.add('faded-link')
+            el.classList.remove('active')
+          }
+        })
+      }
+
+      const handleHoverLeave = () => {
+        // hover log removed
+        const nodeEls = nodeSelRef.current?.nodes?.() ?? []
+        nodeEls.forEach((el: Element) => el.classList.remove('faded', 'active'))
+        const labelEls = labelSelRef.current?.nodes?.() ?? []
+        labelEls.forEach((el: Element) => el.classList.remove('faded', 'active'))
+        const linkEls = linkSelRef.current?.nodes?.() ?? []
+        linkEls.forEach((el: Element) => el.classList.remove('faded-link', 'active'))
+      }
+
+      node.on('mouseenter', handleHoverEnter).on('pointerenter', handleHoverEnter)
+      node.on('mouseleave', handleHoverLeave).on('pointerleave', handleHoverLeave)
+
+  // (debug pointermove listener removed)
+
+      const updateVisibility = () => {
         const show = showMissingRef.current
         node.style('display', (d) => (!show && d.missing ? 'none' : null))
         label.style('display', (d) => (!show && d.missing ? 'none' : null))
@@ -250,48 +334,32 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         })
       }
 
-  const renderPositions = () => {
-      const linkSel = linkSelRef.current
-      const nodeSel = nodeSelRef.current  
-      const labelSel = labelSelRef.current
-      
-      if (!linkSel || !nodeSel || !labelSel) {
-        
-        return
-      }
-      
-      linkSel
-        .attr('x1', (d) => (typeof d.source === 'string' ? 0 : d.source.x ?? 0))
-        .attr('y1', (d) => (typeof d.source === 'string' ? 0 : d.source.y ?? 0))
-        .attr('x2', (d) => (typeof d.target === 'string' ? 0 : d.target.x ?? 0))
-        .attr('y2', (d) => (typeof d.target === 'string' ? 0 : d.target.y ?? 0))
+      const renderPositions = () => {
+        const linkSel = linkSelRef.current
+        const nodeSel = nodeSelRef.current
+        const labelSel = labelSelRef.current
+        if (!linkSel || !nodeSel || !labelSel) return
 
-      // Viewport 내 소프트 클램핑으로 초기 이탈 방지
-      // Remove padding constraints to allow nodes to move freely
-      nodeSel
-        .attr('cx', (d) => {
-          // 초기값이 없으면 중앙 근처에 랜덤 배치
-          if (d.x === undefined) {
-            d.x = W / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
-          }
-          return d.x ?? W / 2
-        })
-        .attr('cy', (d) => {
-          // 초기값이 없으면 중앙 근처에 랜덤 배치  
-          if (d.y === undefined) {
-            d.y = H / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
-          }
-          return d.y ?? H / 2
-        })
-      labelSel
-        .attr('x', (d) => (d.x ?? W / 2) + 10)
-        .attr('y', (d) => (d.y ?? H / 2) + 4)
+        linkSel
+          .attr('x1', (d) => (typeof d.source === 'string' ? 0 : (d.source.x ?? 0)))
+          .attr('y1', (d) => (typeof d.source === 'string' ? 0 : (d.source.y ?? 0)))
+          .attr('x2', (d) => (typeof d.target === 'string' ? 0 : (d.target.x ?? 0)))
+          .attr('y2', (d) => (typeof d.target === 'string' ? 0 : (d.target.y ?? 0)))
 
-  // 첫 진입 렌더 안정화: 원래는 1틱 이후 페이드인을 했으나
-  // 일부 환경에서 tick이 발생하지 않아 영구 투명해지는 이슈가 있어 제거
+        nodeSel
+          .attr('cx', (d) => {
+            if (d.x === undefined) d.x = W / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
+            return d.x ?? W / 2
+          })
+          .attr('cy', (d) => {
+            if (d.y === undefined) d.y = H / 2 + (Math.random() - 0.5) * Math.min(W, H) * 0.6
+            return d.y ?? H / 2
+          })
 
-      // 일정 틱 이후, 질량중심을 화면 중앙으로 1회 평행이동(스케일 변경 없음)
-      ticks++
+        labelSel.attr('x', (d) => (d.x ?? W / 2) + 10).attr('y', (d) => (d.y ?? H / 2) + 4)
+
+        // center adjust after ticks
+        ticks++
         if (!didCenter.current && ticks > 30) {
           const nx = nodes.map((n) => n.x ?? 0)
           const ny = nodes.map((n) => n.y ?? 0)
@@ -299,79 +367,50 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
           const meanY = d3.mean(ny) ?? H / 2
           const tx = W / 2 - meanX
           const ty = H / 2 - meanY
-          const t = d3.zoomIdentity.translate(tx, ty)
-          svg.transition().duration(300).call(zoom.transform, t)
+          const tr = d3.zoomIdentity.translate(tx, ty)
+          svg.transition().duration(300).call(zoomRef.current!.transform, tr)
           didCenter.current = true
         }
       }
-      // Live ticking for dynamic layout
-      simulation.on('tick', () => {
-        ticks++
-        renderPositions()
-      })
 
-      // 시뮬레이션 상태 확인
-      
-      
-      
-      // 시뮬레이션 강제 시작 - 더 강하게 활성화
+      simulation.on('tick', () => renderPositions())
+
       simulation.alpha(1).alphaTarget(0.1).restart()
-      
-      
-      // 추가적인 활성화 - 드래그 시작과 같은 효과
-      setTimeout(() => {
-        simulation.alpha(1).alphaTarget(0.3).restart()
-        
-      }, 100)
-      
-      // 강제로 첫 번째 렌더링 실행 (tick이 없어도 노드가 보이도록)
-      
+      setTimeout(() => simulation.alpha(1).alphaTarget(0.3).restart(), 100)
       renderPositions()
 
-      // 백업: 시뮬레이션이 작동하지 않는 경우 타이머로 수동 업데이트
+      // manual tick fallback
       let tickCount = 0
       const manualTick = () => {
         tickCount++
         renderPositions()
-        if (tickCount < 100) {
-          setTimeout(manualTick, 16) // ~60fps
-        }
+        if (tickCount < 100) setTimeout(manualTick, 16)
       }
-      
-      // 1초 후에도 tick이 없으면 수동 애니메이션 시작
       setTimeout(() => {
-        if (ticks === 0) {
-          
-          manualTick()
-        }
+        if (ticks === 0) manualTick()
       }, 1000)
 
       initializedRef.current = true
 
-  // 초기 가시성 적용
-  updateVisibility()
+      // initial visibility
+      updateVisibility()
 
-      return () => {
-        simulation.stop()
-      }
+  // (debug badge removed)
+
+  return () => { simulation.stop() }
     }
 
-    // Update-only path: when container resizes, adjust viewBox and background rect
+    // Update-only path
     svg.attr('viewBox', `0 0 ${W} ${H}`)
-    svg
-      .select('rect.bg-rect')
-      .attr('width', W)
-      .attr('height', H)
+    svg.select('rect.bg-rect').attr('width', W).attr('height', H)
   }, [dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick])
 
-  // React to toggle changes without rebuilding D3 scene
   useEffect(() => {
     showMissingRef.current = showMissing
     const node = nodeSelRef.current
     const link = linkSelRef.current
     const label = labelSelRef.current
     if (node && link && label) {
-      // Reuse the same logic as in init
       const missingSet = new Set<string>((data.nodes as GraphNode[]).filter((n) => n.missing).map((n) => n.id))
       node.style('display', (d) => (!showMissing && d.missing ? 'none' : null))
       label.style('display', (d) => (!showMissing && d.missing ? 'none' : null))
@@ -383,18 +422,16 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     }
   }, [showMissing, data.nodes])
 
-  // 리사이즈 시 자동 맞춤 제거(인사이트 패널 열고 닫을 때 미세 줌 변화를 방지)
-
   return (
     <div ref={wrapRef} className="graph-wrap" onClick={handleWrapperClick} onMouseDown={handleWrapperMouseDown}>
       <svg ref={svgRef} role="img" aria-label="graph view" />
-      
+
       <div className="graph-controls">
         <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
           <input
             type="checkbox"
             checked={showMissing}
-            onChange={() => setShowMissing(v => !v)}
+            onChange={() => setShowMissing((v) => !v)}
             style={{ cursor: 'pointer' }}
           />
           Include Missings

@@ -1,2 +1,34 @@
 .graph-wrap{position:relative;width:100%;height:100%}
 .graph-controls{position:absolute;top:8px;right:8px;display:flex;align-items:center;gap:8px;background:rgba(20,24,32,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border-radius:12px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.25);color:#c9d4e3;font-size:12px;user-select:none;pointer-events:auto}
+
+/* faded/underlit visuals for hover de-emphasis */
+.graph-wrap svg circle.node { opacity: 1; transition: opacity 160ms ease; }
+.graph-wrap svg line.link { opacity: 1; transition: opacity 160ms ease; }
+.graph-wrap svg text.label { opacity: 1; transition: opacity 160ms ease; }
+.graph-wrap svg .faded { opacity: 0.12 !important; transition: opacity 160ms ease; pointer-events: none; }
+.graph-wrap svg .faded-link { opacity: 0.06 !important; transition: opacity 160ms ease; pointer-events: none; }
+.graph-wrap svg .active { opacity: 1 !important; transition: opacity 120ms ease; pointer-events: all; }
+
+/* Ensure background rect uses default cursor (not pointer/hand) */
+.graph-svg .bg-rect { cursor: default; }
+
+/* CSS-only hover: when a .node is hovered, fade unrelated nodes/links/labels.
+	Uses :has when available for grouping; falls back to simple hover styles. */
+
+/* Modern browsers: target the group that contains the hovered node and adjust siblings */
+/* Keep :has rules as gentle visual helpers but avoid overriding JS class toggles. */
+.graph-svg:has(.node:hover) .node { opacity: 0.12; transition: opacity 160ms ease; }
+.graph-svg:has(.node:hover) .link { opacity: 0.06; transition: opacity 160ms ease; }
+.graph-svg:has(.node:hover) .label { opacity: 0.12; transition: opacity 160ms ease; }
+
+/* But keep the hovered node/link/label fully visible */
+.graph-svg .node:hover { opacity: 1 !important; }
+.graph-svg .node:hover ~ .label { opacity: 1 !important; }
+
+/* Hovering a node should also highlight directly connected links and labels.
+	Since we don't have per-element JS to mark related edges, keep a reasonable
+	visual: hovered node stays full opacity and surrounding elements are faded. */
+
+/* Fallback for older browsers without :has: ensure simple hover still shows node */
+.graph-svg .node:hover { opacity: 1; }
+
