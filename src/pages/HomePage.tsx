@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { getAllPosts } from '../lib/posts';
+import { formatPostDate } from '../lib/date';
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate()
@@ -34,7 +35,7 @@ const HomePage: React.FC = () => {
               </h3>
               {post.meta.excerpt ? <p>{post.meta.excerpt}</p> : null}
               <small>
-                {post.meta.date}
+                {formatPostDate(post.meta.date)}
                 {post.meta.author ? ` · ${post.meta.author}` : null}
               </small>
             </div>
