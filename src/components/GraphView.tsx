@@ -3,6 +3,28 @@ import * as d3 from 'd3'
 import type { GraphData, GraphNode } from '../types'
 import './GraphView.css'
 
+/*
+  GraphView.tsx
+
+  Purpose:
+  - Render an interactive force-directed graph using d3 within a React component.
+  - Provide zoom/pan, node dragging, hover highlighting, and a visibility toggle for "missing" nodes.
+
+  Contract (high-level):
+  - Inputs: `data: GraphData` (nodes: GraphNode[], links: { source, target }[]), optional width/height.
+  - Outputs: visually-updated SVG positions for nodes/links/labels; callbacks onNodeClick and onBackgroundClick.
+  - Side effects: attaches D3 simulation and DOM listeners; cleans up simulation on unmount.
+
+  Success criteria:
+  - Nodes and links are positioned by the physics simulation and updated into the DOM on each tick.
+  - When the modal (or container) size changes, the simulation is restarted/kicked so layout reflows correctly.
+  - Dragging a node fixes its position during drag and restarts the simulation to provide consistent tactile feedback.
+
+  Notes:
+  - The simulation may receive links with string ids; those are mapped to node objects when possible.
+  - A short "relax" timer is used after kicking the sim to lower alphaTarget and allow the layout to settle.
+*/
+
 type NodeDatum = GraphNode & {
   x?: number
   y?: number
@@ -30,6 +52,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   const wrapRef = useRef<HTMLDivElement | null>(null)
   const [dims, setDims] = useState<{ w: number; h: number }>({ w: width, h: height })
   const initializedRef = useRef(false)
+  const kickTimerRef = useRef<number | null>(null)
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
   const simulationRef = useRef<d3.Simulation<NodeDatum, LinkDatum> | null>(null)
   const nodeSelRef = useRef<d3.Selection<SVGCircleElement, NodeDatum, SVGGElement, unknown> | null>(null)
@@ -53,6 +76,11 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     }
   }
 
+  // The wrapper click/mousedown handlers are thin adapters so clicks on the
+  // empty graph background (or the SVG itself) are treated as background
+  // interactions. This lets parent components close the modal or clear
+  // selection when the user clicks away from nodes.
+
   // Resize observer to make the graph fill available space
   useEffect(() => {
     const el = wrapRef.current
@@ -70,6 +98,37 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     const W = dims.w || width
     const H = dims.h || height
 
+    // Helper to consistently kick/restart the simulation. Use this both when
+    // the modal first opens and when a user starts dragging a node so the
+    // simulation behavior is identical.
+    const kickSimulation = (sim: d3.Simulation<NodeDatum, LinkDatum> | null, target = 0.3, relaxTo = 0.05, relaxAfter = 1200) => {
+      if (!sim) return
+      try {
+        // start energetic phase
+        sim.alpha(1)
+        sim.alphaTarget(target)
+        sim.restart()
+
+        // clear any previous timer
+        if (kickTimerRef.current) {
+          window.clearTimeout(kickTimerRef.current)
+          kickTimerRef.current = null
+        }
+
+        // after a short period, reduce alphaTarget to allow damping / settling
+        kickTimerRef.current = window.setTimeout(() => {
+          try {
+            sim.alphaTarget(relaxTo)
+          } catch {
+            // ignore
+          }
+          kickTimerRef.current = null
+        }, relaxAfter)
+      } catch {
+        // Defensive: ignore if simulation already stopped
+      }
+    }
+
     if (!initializedRef.current) {
       svg.selectAll('*').remove()
       svg
@@ -80,8 +139,8 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .classed('graph-svg', true)
   // debug removed
 
-      // Background rect should be inserted first so it sits behind nodes and
-      // captures empty-area clicks while allowing node events to receive pointer events.
+  // Background rect should be inserted first so it sits behind nodes and
+  // captures empty-area clicks while allowing node events to receive pointer events.
       svg
         .insert('rect', ':first-child')
         .attr('class', 'bg-rect')
@@ -97,24 +156,34 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
           onBackgroundClick?.()
         })
 
+      // Root group that will be transformed by zoom/pan. All nodes/links/labels
+      // are appended inside this so a single transform handles panning and zoom.
       const gRoot = svg
         .append('g')
         .attr('class', 'zoom-layer')
         .style('opacity', 1)
+      // Simple color helpers for node and link styling; missing nodes use a
+      // distinct color to make them visually identifiable.
       const colorNode = (missing?: boolean) => (missing ? '#ff8a8a' : '#9db9ff')
       const colorLink = '#63708a'
 
       const nodes: NodeDatum[] = data.nodes as NodeDatum[]
       const rawLinks: LinkDatum[] = data.links as unknown as LinkDatum[]
       const idToNode = new Map<string, NodeDatum>(nodes.map(n => [n.id, n]))
-  const links: LinkDatum[] = rawLinks.map(l => ({
+      // Convert raw link endpoints (which may be strings) into node object
+      // references when possible. Leaving a string in place is tolerated by
+      // later rendering code (it falls back to coords 0/0), but mapping is
+      // preferred so the link force can operate on object references.
+      const links: LinkDatum[] = rawLinks.map(l => ({
         source: (typeof l.source === 'string' ? (idToNode.get(l.source) ?? l.source) : l.source),
         target: (typeof l.target === 'string' ? (idToNode.get(l.target) ?? l.target) : l.target),
       }))
 
   // debug removed
 
-  // Build adjacency map for fast neighbor lookup during hover
+  // Build adjacency map for fast neighbor lookup during hover. This map
+  // lets hover handlers quickly decide which nodes/links should be
+  // highlighted vs faded without expensive graph traversals.
       const adjacency = new Map<string, Set<string>>()
       nodes.forEach(n => adjacency.set(n.id, new Set([n.id])))
       links.forEach(l => {
@@ -127,7 +196,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       })
   // debug removed
 
-      const simulation = d3
+  // Create and configure the force simulation. The chosen forces:
+  // - link: tries to keep linked nodes at a fixed distance
+  // - charge: repels nodes to avoid clumping
+  // - collision: prevents visual overlap using a collision radius
+  // - x/y/center: softly bias nodes toward the viewport center
+  // velocityDecay controls damping; a larger value damps motion faster.
+  const simulation = d3
         .forceSimulation<NodeDatum>(nodes)
         .force('link', d3.forceLink<NodeDatum, LinkDatum>(links).id((d) => d.id).distance(120))
         .force('charge', d3.forceManyBody().strength(-180))
@@ -139,9 +214,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .velocityDecay(0.6)
         .alpha(1)
         .alphaDecay(0.05)
-      simulationRef.current = simulation
+  simulationRef.current = simulation
 
-  const link = gRoot
+
+
+      // Link elements: simple stroked lines. They don't receive pointer
+      // events so clicks/hover pass through to nodes unless intercepted.
+      const link = gRoot
         .append('g')
         .attr('stroke', colorLink)
         .attr('stroke-opacity', 0.6)
@@ -157,6 +236,10 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       linkSelRef.current = link
   // debug removed
 
+      // Node elements: circles that accept pointer events and respond to
+      // click and drag. Clicking stops propagation so the background handler
+      // doesn't close the modal. Dragging sets fx/fy so the simulation treats
+      // the node as fixed during the drag; releasing clears fx/fy.
       const node = gRoot
         .append('g')
         .selectAll('circle')
@@ -183,22 +266,30 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
               if (se && typeof (se as Event).stopPropagation === 'function') {
                 ;(se as Event).stopPropagation()
               }
-              if (!event.active) simulation.alphaTarget(0.3).restart()
+              // Kick the sim consistently when dragging starts so the
+              // user's dragging action produces consistent physics feedback.
+              if (!event.active) kickSimulation(simulation, 0.3)
               d.fx = d.x ?? null
               d.fy = d.y ?? null
             })
             .on('drag', (event, d) => {
+              // Keep the node fixed to the pointer while dragging
               d.fx = event.x
               d.fy = event.y
             })
             .on('end', (event, d) => {
+              // Release the node back to the simulation. If nothing else is
+              // active, lower the alphaTarget so the system can settle.
               if (!event.active) simulation.alphaTarget(0)
               d.fx = null
               d.fy = null
             })
         )
-  nodeSelRef.current = node
+      nodeSelRef.current = node
 
+      // Labels are simple text elements positioned near nodes. They don't
+      // participate in pointer events to keep hover behavior focused on
+      // the nodes themselves.
       const label = gRoot
         .append('g')
         .selectAll('text')
@@ -213,10 +304,12 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         .attr('pointer-events', 'none')
         .style('opacity', 1)
         .style('font-family', 'Arial, sans-serif')
-  labelSelRef.current = label
+      labelSelRef.current = label
 
       // Zoom/Pan
-      const zoom = d3
+  // Zoom behavior: allow wheel and left-mouse drag to pan/zoom. Touch and
+  // gesture events are disabled to avoid unexpected behavior on mobile.
+  const zoom = d3
         .zoom<SVGSVGElement, unknown>()
         .scaleExtent([0.2, 4])
         .filter((event: unknown) => {
@@ -248,8 +341,10 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
       zoomRef.current = zoom
       svg.call(zoom.transform, d3.zoomIdentity)
 
-      let ticks = 0
-      const didCenter = { current: false }
+  // Track ticks to know when the simulation has progressed enough to
+  // perform a one-time centering transform that improves initial layout.
+  let ticks = 0
+  const didCenter = { current: false }
 
       const missingSet = new Set<string>(nodes.filter((n) => n.missing).map((n) => n.id))
 
@@ -334,7 +429,10 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
         })
       }
 
-      const renderPositions = () => {
+  // renderPositions: called on every simulation tick (and also during
+  // manual fallback). Updates link endpoints, node circle positions, and
+  // label positions based on the simulation's x/y values.
+  const renderPositions = () => {
         const linkSel = linkSelRef.current
         const nodeSel = nodeSelRef.current
         const labelSel = labelSelRef.current
@@ -358,7 +456,8 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
 
         labelSel.attr('x', (d) => (d.x ?? W / 2) + 10).attr('y', (d) => (d.y ?? H / 2) + 4)
 
-        // center adjust after ticks
+  // center adjust after ticks: once nodes have moved a bit, compute the
+  // mean position and pan the viewport so the graph is centered.
         ticks++
         if (!didCenter.current && ticks > 30) {
           const nx = nodes.map((n) => n.x ?? 0)
@@ -375,11 +474,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
 
       simulation.on('tick', () => renderPositions())
 
-      simulation.alpha(1).alphaTarget(0.1).restart()
-      setTimeout(() => simulation.alpha(1).alphaTarget(0.3).restart(), 100)
+  // Kick the simulation once on init so positions start converging
+  kickSimulation(simulation, 0.3)
       renderPositions()
 
-      // manual tick fallback
+  // manual tick fallback: some environments may not run RAF-driven ticks
+  // reliably right away; if the main tick counter hasn't incremented,
+  // attempt a few manual renders to ensure the UI shows something.
       let tickCount = 0
       const manualTick = () => {
         tickCount++
@@ -397,12 +498,22 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
 
   // (debug badge removed)
 
-  return () => { simulation.stop() }
+  return () => {
+        simulation.stop()
+        if (kickTimerRef.current) {
+          window.clearTimeout(kickTimerRef.current)
+          kickTimerRef.current = null
+        }
+      }
     }
 
     // Update-only path
     svg.attr('viewBox', `0 0 ${W} ${H}`)
     svg.select('rect.bg-rect').attr('width', W).attr('height', H)
+    // If already initialized, ensure simulation restarts on resize/dims change
+    if (initializedRef.current) {
+      kickSimulation(simulationRef.current, 0.3)
+    }
   }, [dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick])
 
   useEffect(() => {
