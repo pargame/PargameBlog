@@ -1,3 +1,0 @@
-/* GraphControls.css - small helper styles for the controls inside the graph overlay */
-.graph-controls-label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-.graph-controls-checkbox { cursor: pointer; }
