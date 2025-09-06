@@ -1,8 +1,11 @@
 /**
  * Small helper for dynamic import interop (common patterns when bundling ESM/CJS)
  */
-export function unwrapModule<T>(mod: any): T {
-  return mod && typeof mod === 'object' && 'default' in mod ? mod.default : mod
+export function unwrapModule<T>(mod: unknown): T {
+  if (mod && typeof mod === 'object' && 'default' in (mod as Record<string, unknown>)) {
+    return (mod as Record<string, unknown>).default as unknown as T
+  }
+  return mod as T
 }
 /**
  * Helper utilities for dealing with dynamic import shapes (ESM default vs CJS)
