@@ -12,7 +12,7 @@ interface GraphModalProps {
 const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick }) => {
   return (
     <div className="modal" onClick={e => e.stopPropagation()}>
-  <Suspense fallback={<div className="suspense-fallback">모달 로딩중…</div>}>
+      <Suspense fallback={<div className="suspense-fallback">모달 로딩중…</div>}>
         <GraphModalContent
           collection={collection}
           onClose={onClose}

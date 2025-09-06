@@ -1,0 +1,33 @@
+/* GraphModalContent.css - styles extracted from inline styles for the modal header and search UI */
+.graph-modal-header-left { display:flex; align-items:center; gap:0.75rem; }
+.graph-modal-title { margin:0; }
+
+.graph-modal-header-right { display:flex; align-items:center; gap:0.5rem; }
+.graph-modal-search-wrapper { position:relative; }
+
+.graph-search-input {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-1);
+  min-width: 200px;
+}
+
+.graph-search-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0,0,0,0.5);
+  z-index: 60;
+  min-width: 260px;
+  overflow: hidden;
+}
+
+.graph-search-result-item { padding: 8px 10px; cursor: pointer; border-bottom: 1px solid rgba(255,255,255,0.02); }
+.graph-search-result-item:hover { background: rgba(255,255,255,0.02); }
+.graph-search-result-title { font-size: 13px; }
+.graph-search-result-slug { font-size: 12px; color: var(--text-2); }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
 import logger from '../lib/logger'
+import unwrapModuleDefault from '../lib/moduleUtils'
 import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
 import { getPostBySlug } from '../lib/posts'
@@ -14,8 +15,9 @@ function createSafeWrapper(candidate: unknown): MarkdownPlugin | null {
     // If `this` is not a unified Processor (no `data`), skip attaching the
     // plugin to avoid runtime TypeErrors. This means GFM features won't be
     // enabled for this render, but it prevents the page from crashing.
-    const processorLike = this as unknown as { data?: unknown }
-      if (!processorLike || typeof processorLike.data !== 'function') {
+    interface ProcessorLike { data?: unknown }
+    const processorLike = this as ProcessorLike
+    if (!processorLike || typeof (processorLike.data as unknown) !== 'function') {
         // silently skip attaching remark-gfm when `this` is not a unified
         // processor (prevents noisy logs in StrictMode double-invokes).
         return function () { return function noopTransformer(tree: unknown) { return tree } }
@@ -40,7 +42,7 @@ const PostPage: React.FC = () => {
     ;(async () => {
       try {
         const mod = await import('remark-gfm')
-        const candidate = (mod as unknown as Record<string, unknown>).default ?? mod
+  const candidate = unwrapModuleDefault<unknown>(mod)
         const wrapped = createSafeWrapper(candidate)
         if (mounted) setRemarkGfm(wrapped)
       } catch {

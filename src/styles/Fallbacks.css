@@ -1,0 +1,15 @@
+/* shared small suspense fallback styles used by graph modal */
+.suspense-fallback, .suspense-fallback-hero, .suspense-fallback-small {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  color: #64748b;
+}
+
+.suspense-fallback { min-height: 120px }
+.suspense-fallback-hero { min-height: 240px }
+/* Shared small utilities for suspense fallback boxes and simple padding */
+.suspense-fallback { padding: 20px; }
+.suspense-fallback-small { padding: 16px; }
+.suspense-fallback-hero { padding: 24px; }

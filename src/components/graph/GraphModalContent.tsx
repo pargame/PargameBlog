@@ -1,10 +1,8 @@
 import React, { memo, useEffect, useRef, useState } from 'react'
 import './GraphModalContent.css'
-import logger from '../lib/logger'
-import type { GraphData, Post } from '../types'
-// graph builder will be dynamically imported to keep this chunk small
+import logger from '../../lib/logger'
+import type { GraphData, Post } from '../../types'
 const GraphView = React.lazy(() => import('./GraphView'))
-// content index will be loaded dynamically
 
 interface Props {
   collection: string
@@ -15,17 +13,14 @@ interface Props {
 
 const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick }) => {
   const [posts, setPosts] = useState<Array<{ slug: string; title: string }>>([])
-
-  // Build graph data asynchronously so content markdown can be code-split
   const [graphData, setGraphData] = useState<GraphData | null>(null)
   useEffect(() => {
     let mounted = true
   ;(async () => {
       try {
-        const gmod = await import('../lib/graph')
+        const gmod = await import('../../lib/graph')
         const d = await gmod.buildGraphForCollectionAsync(collection)
         if (!mounted) return
-  // debug removed
         setGraphData(d)
       } catch (_err) {
         if (import.meta.env.DEV) logger.warn('[GraphModalContent] graph build failed', _err)
@@ -38,7 +33,7 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
     let mounted = true
     ;(async () => {
       try {
-        const postsMod = await import('../lib/posts')
+        const postsMod = await import('../../lib/posts')
         const all: Post[] = await postsMod.loadAllPosts()
         if (!mounted) return
         const mapped = all.map((p: Post) => ({ slug: p.slug, title: p.meta?.title ?? p.slug }))
@@ -55,13 +50,13 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
     let mounted = true
     ;(async () => {
       try {
-        const mod = await import('../lib/contentIndex')
+        const mod = await import('../../lib/contentIndex')
         if (!mod.getContentItemsForCollectionAsync) return
         const items = await mod.getContentItemsForCollectionAsync(collection)
         if (!mounted) return
         setContentItems(items)
-      } catch {
-        /* ignore content index load errors */
+      } catch (err) {
+        if (import.meta.env.DEV) logger.warn('[GraphModalContent] contentIndex load failed', err)
       }
     })()
     return () => { mounted = false }
@@ -79,7 +74,7 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
     }
     ;(async () => {
       try {
-        const searchMod = await import('../lib/search')
+        const searchMod = await import('../../lib/search')
         const source = contentItems.length > 0 ? contentItems : posts
         const found = searchMod.searchItems(source, query)
         setResults(found)
@@ -91,12 +86,10 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
 
   return (
     <>
-      {/* small on-screen debug badge to help confirm this component rendered */}
-    {/* debug badge removed */}
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div className="graph-modal-header-left">
-            <h2 className="graph-modal-title">{collection}  Graph</h2>
+            <h2 className="graph-modal-title">{collection} · Graph</h2>
           </div>
 
           <div className="graph-modal-header-right">
@@ -134,7 +127,7 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
         </div>
         <div className="modal-body">
           <div className="graph-modal-body">
-      <React.Suspense fallback={<div className="suspense-fallback">그래프 로딩 중…</div>}>
+            <React.Suspense fallback={<div className="suspense-fallback">그래프 로딩 중…</div>}>
               {graphData ? (
                 <GraphView
                   data={graphData}
@@ -142,7 +135,7 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
                   onBackgroundClick={onGraphBackgroundClick}
                 />
               ) : (
-        <div className="suspense-fallback">그래프 데이터 준비 중…</div>
+                <div className="suspense-fallback">그래프 데이터 준비 중…</div>
               )}
             </React.Suspense>
           </div>

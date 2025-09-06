@@ -1,32 +1,9 @@
 import React, { memo, useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
-import type { GraphData, GraphNode } from '../types'
+import type { GraphData, GraphNode } from '../../types'
 import './GraphView.css'
 import GraphControls from './GraphControls'
-import useGraphSimulation from '../hooks/useGraphSimulation'
-// raw link type is provided by ../types via GraphData
-
-/*
-  GraphView.tsx
-
-  Purpose:
-  - Render an interactive force-directed graph using d3 within a React component.
-  - Provide zoom/pan, node dragging, hover highlighting, and a visibility toggle for "missing" nodes.
-
-  Contract (high-level):
-  - Inputs: `data: GraphData` (nodes: GraphNode[], links: { source, target }[]), optional width/height.
-  - Outputs: visually-updated SVG positions for nodes/links/labels; callbacks onNodeClick and onBackgroundClick.
-  - Side effects: attaches D3 simulation and DOM listeners; cleans up simulation on unmount.
-
-  Success criteria:
-  - Nodes and links are positioned by the physics simulation and updated into the DOM on each tick.
-  - When the modal (or container) size changes, the simulation is restarted/kicked so layout reflows correctly.
-  - Dragging a node fixes its position during drag and restarts the simulation to provide consistent tactile feedback.
-
-  Notes:
-  - The simulation may receive links with string ids; those are mapped to node objects when possible.
-  - A short "relax" timer is used after kicking the sim to lower alphaTarget and allow the layout to settle.
-*/
+import useGraphSimulation from './useGraphSimulation'
 
 type NodeDatum = GraphNode & {
   x?: number
@@ -79,12 +56,6 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     }
   }
 
-  // The wrapper click/mousedown handlers are thin adapters so clicks on the
-  // empty graph background (or the SVG itself) are treated as background
-  // interactions. This lets parent components close the modal or clear
-  // selection when the user clicks away from nodes.
-
-  // Resize observer to make the graph fill available space
   useEffect(() => {
     const el = wrapRef.current
     if (!el) return
@@ -96,7 +67,6 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     return () => ro.disconnect()
   }, [])
 
-  // Initialize and manage the D3 simulation & rendering via a hook.
   useGraphSimulation({
     svgRef,
     wrapRef,

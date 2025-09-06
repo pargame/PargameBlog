@@ -1,6 +1,7 @@
 import type { Post, PostMeta } from '../types'
 import { parseFrontmatter } from './frontmatter'
 import logger from './logger'
+import unwrapModuleDefault from './moduleUtils'
 
 // Use dynamic import to avoid bundling all posts into the app's initial chunks.
 // `postsGlob` returns functions that when called import the raw markdown content as string.
@@ -75,8 +76,9 @@ async function loadAllPosts(): Promise<Post[]> {
       const out: Record<string,string> = {}
       const entries = Object.entries(g)
       for (const [path, loader] of entries) {
-        const m = await loader()
-        out[path] = typeof m === 'string' ? m : (m as unknown as { default?: string })?.default ?? ''
+    const m = await loader()
+    const val = unwrapModuleDefault<string | { default?: string }>(m)
+    out[path] = typeof val === 'string' ? val : (val?.default ?? '')
       }
       return out
     })()))
@@ -88,8 +90,9 @@ async function loadAllPosts(): Promise<Post[]> {
   const modules: Record<string,string> = {}
   await Promise.all(entries.map(async ([path, loader]) => {
     try {
-      const m = await loader()
-      modules[path] = typeof m === 'string' ? m : (m as unknown as { default?: string })?.default ?? ''
+  const m = await loader()
+  const val = unwrapModuleDefault<string | { default?: string }>(m)
+  modules[path] = typeof val === 'string' ? val : (val?.default ?? '')
       } catch (e) {
       logger.error('[posts] failed to import', path, e)
     }

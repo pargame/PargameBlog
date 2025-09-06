@@ -2,7 +2,7 @@ import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useStat
 import { useLocation, useNavigate } from 'react-router-dom'
 import { listContentCollections } from '../lib/content'
 // GraphModal is heavy (GraphView + d3). Lazy-load it so initial bundle stays small.
-const GraphModal = lazy(() => import('../components/GraphModal'))
+const GraphModal = lazy(() => import('../components/graph/GraphModal'))
 // InsightDrawer uses react-markdown and remark-gfm; lazy-load to avoid bundling them in GraphPage
 const InsightDrawer = lazy(() => import('../components/InsightDrawer'))
 import CollectionCard from '../components/CollectionCard'
@@ -96,7 +96,7 @@ const GraphPage: React.FC = () => {
 
       {opened && (
         <div className="modal-backdrop" onClick={handleCloseModal}>
-          <Suspense fallback={<div style={{ padding: 24 }}>로딩 중…</div>}>
+          <Suspense fallback={<div className="suspense-fallback-hero">로딩 중…</div>}>
             <GraphModal 
               key={opened}
               collection={opened}
@@ -105,7 +105,7 @@ const GraphPage: React.FC = () => {
               onGraphBackgroundClick={handleGraphBackgroundClick}
             />
           </Suspense>
-          <Suspense fallback={<div style={{ padding: 16 }}>패널 준비중…</div>}>
+          <Suspense fallback={<div className="suspense-fallback-small">패널 준비중…</div>}>
             <InsightDrawer
               collection={opened}
               insightId={insightId}

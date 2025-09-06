@@ -36,7 +36,7 @@ class LocalErrorBoundary extends React.Component<{
   render() {
     if (this.state.hasError) {
       return (
-        <div style={{ padding: 16 }}>
+        <div className="suspense-fallback-small">
           문서 렌더링 중 오류가 발생했습니다.
         </div>
       )
@@ -134,7 +134,7 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
     >
       <div className="insight-content">
         <div className="insight-scroll" ref={scrollRef}>
-          <Suspense fallback={<div style={{ padding: 16 }}>문서 렌더링 준비중…</div>}>
+          <Suspense fallback={<div className="suspense-fallback-small">문서 렌더링 준비중…</div>}>
           <LocalErrorBoundary>
           <LazyMarkdown
             remarkPlugins={[remarkWikiLinkToSpan]}
