@@ -4,7 +4,13 @@ import type { GraphNode } from '../../types'
 import type { RawLink } from '../../lib/graphUtils'
 import { colorNode, getMissingSet, mapLinksToNodes } from '../../lib/graphUtils'
 
-type NodeDatum = GraphNode & { x?: number; y?: number; vx?: number; vy?: number; fx?: number | null; fy?: number | null }
+type NodeDatum = GraphNode & d3.SimulationNodeDatum & {
+  fx?: number | null
+  fy?: number | null
+  // per-node idle bookkeeping
+  _idleTicks?: number
+  _autoPinned?: boolean
+}
 type LinkDatum = { source: string | NodeDatum; target: string | NodeDatum }
 
 type Params = {
@@ -53,6 +59,21 @@ export default function useGraphSimulation(params: Params) {
     const kickSimulation = (sim: d3.Simulation<NodeDatum, LinkDatum> | null, target = 0.3, relaxTo = 0.05, relaxAfter = 1200) => {
       if (!sim) return
       try {
+        // when kicking, ensure nodes are unfixed so the sim can move them
+        try {
+          const nodes = sim.nodes() as NodeDatum[]
+          for (let i = 0; i < nodes.length; i++) {
+            // only unpin nodes that were auto-pinned by our logic
+            const n = nodes[i]
+            if (n._autoPinned) {
+              n.fx = null
+              n.fy = null
+              n._autoPinned = false
+            }
+          }
+        } catch {
+          // ignore
+        }
         sim.alpha(1)
         sim.alphaTarget(target)
         sim.restart()
@@ -207,10 +228,23 @@ export default function useGraphSimulation(params: Params) {
         .zoom<SVGSVGElement, unknown>()
         .scaleExtent([0.2, 4])
         .filter((event: unknown) => {
-          const e = event as { type?: string; button?: number }
+          const e = event as { type?: string; button?: number; target?: EventTarget }
           const t = e.type
           if (t === 'wheel') return true
-          if (t === 'mousedown') return e.button === 0
+          if (t === 'mousedown') {
+            // if mousedown happens on a node (or its label/circle), don't treat as zoom start
+            try {
+              const tgt = e.target as HTMLElement | null
+              if (tgt) {
+                if (tgt.classList && (tgt.classList.contains('node') || tgt.classList.contains('label'))) return false
+                if (tgt.closest && typeof tgt.closest === 'function' && tgt.closest('.node')) return false
+                if (tgt.tagName && tgt.tagName.toLowerCase() === 'circle') return false
+              }
+            } catch {
+              // ignore and fall back to default
+            }
+            return e.button === 0
+          }
           if (t === 'mousemove' || t === 'mouseup') return true
           if (
             t === 'dblclick' ||
@@ -234,6 +268,12 @@ export default function useGraphSimulation(params: Params) {
           const target = se.target as HTMLElement
           const isBg = target.classList.contains('bg-rect') || (target.tagName && target.tagName.toLowerCase() === 'svg')
           if (isBg) onBackgroundClick?.()
+          // wake simulation on user interaction
+          try {
+            kickSimulation(simulationRef.current)
+          } catch {
+            // ignore
+          }
         })
 
       svg.on('dblclick.zoom', null)
@@ -241,8 +281,22 @@ export default function useGraphSimulation(params: Params) {
       zoomRef.current = zoom
       svg.call(zoom.transform, d3.zoomIdentity)
 
-      let ticks = 0
-      const didCenter = { current: false }
+  let ticks = 0
+  const didCenter = { current: false }
+
+  // Auto-sleep configuration: when maximum node speed stays below VELOCITY_THRESHOLD
+  // for IDLE_TICKS_TO_STOP consecutive ticks, stop the simulation to save CPU and
+  // stabilize the layout. Interaction (drag/zoom) will kick the sim again.
+  // aggressive idle detection for large graphs:
+  // consider a node 'slow' if its speed < NODE_SPEED_THRESHOLD
+  // relaxed: consider nodes 'slow' even at higher instantaneous speeds so
+  // auto-pinning happens earlier for large graphs
+  const NODE_SPEED_THRESHOLD = 0.2
+  // if this fraction of nodes are slow, start counting idle ticks
+  const NODE_IDLE_RATIO = 0.9
+  // few consecutive ticks before stopping (very aggressive)
+  const IDLE_TICKS_TO_STOP = 5
+  // per-node idle counters are used instead of a global idleTicks
 
       const missingSet = getMissingSet(nodes as GraphNode[])
 
@@ -284,7 +338,58 @@ export default function useGraphSimulation(params: Params) {
         }
       }
 
-      simulationRef.current.on('tick', () => renderPositions())
+      // install a tick handler which renders and checks for idleness
+      simulationRef.current.on('tick', () => {
+        renderPositions()
+
+        try {
+          const sim = simulationRef.current
+          if (!sim) return
+          const currentNodes = sim.nodes() as NodeDatum[]
+
+          let autoPinnedCount = 0
+          for (let i = 0; i < currentNodes.length; i++) {
+            const n = currentNodes[i]
+            if (!n._idleTicks) n._idleTicks = 0
+            if (!n._autoPinned) n._autoPinned = false
+
+            const vx = n.vx ?? 0
+            const vy = n.vy ?? 0
+            const s = Math.sqrt(vx * vx + vy * vy)
+            if (s < NODE_SPEED_THRESHOLD) {
+              n._idleTicks = (n._idleTicks ?? 0) + 1
+            } else {
+              n._idleTicks = 0
+            }
+
+            if (!n._autoPinned && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
+              // auto-pin this node
+              n.vx = 0
+              n.vy = 0
+              n.fx = n.x ?? null
+              n.fy = n.y ?? null
+              n._autoPinned = true
+            }
+
+            if (n._autoPinned) autoPinnedCount++
+          }
+
+          const ratio = currentNodes.length > 0 ? autoPinnedCount / currentNodes.length : 1
+          if (ratio >= NODE_IDLE_RATIO) {
+            try {
+              sim.stop()
+            } catch {
+              // ignore
+            }
+            // reset idleTicks to avoid immediate re-trigger
+            for (let i = 0; i < currentNodes.length; i++) {
+              currentNodes[i]._idleTicks = 0
+            }
+          }
+        } catch {
+          // ignore
+        }
+      })
       kickSimulation(simulationRef.current)
       renderPositions()
 
