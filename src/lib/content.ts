@@ -1,3 +1,9 @@
+/**
+ * src/lib/content.ts
+ * Responsibility: Exports listContentCollections
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 // Utility to list top-level collections under src/content based on markdown files
 export function listContentCollections(): string[] {
   // Only read file paths (do NOT eager-load file contents) to avoid bundling all markdown

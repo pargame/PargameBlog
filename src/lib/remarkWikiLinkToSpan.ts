@@ -1,3 +1,9 @@
+/**
+ * src/lib/remarkWikiLinkToSpan.ts
+ * Responsibility: Default export remarkWikiLinkToSpan
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 // Minimal remark plugin: transform text tokens like [[Target]] into link nodes
 // with url scheme 'wikilink:Target'. We'll render them as <span class="wikilink">Target</span>.
 

@@ -1,3 +1,12 @@
+/**
+ * src/components/graph/GraphModalContent.tsx
+ * 책임: GraphModal 내부의 콘텐츠 로직을 처리한다.
+ * - 비동기 로딩: graph builder, posts, contentIndex 등을 lazy import로 로드
+ * - 검색/검색 결과 렌더링
+ * - GraphView를 Suspense로 감싸 렌더링
+ *
+ * 주석 규칙: 비동기 경로(import ...) 및 중요한 상태값(useState/useEffect)을 단락 주석으로 설명합니다.
+ */
 import React, { memo, useEffect, useRef, useState } from 'react'
 import './GraphModalContent.css'
 import logger from '../../lib/logger'

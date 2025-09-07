@@ -1,3 +1,9 @@
+/**
+ * src/components/Footer.tsx
+ * Responsibility: Default export memo
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import { memo, useEffect, useState } from 'react'
 
 function Footer() {

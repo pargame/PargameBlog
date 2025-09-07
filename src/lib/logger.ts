@@ -1,3 +1,9 @@
+/**
+ * src/lib/logger.ts
+ * Responsibility: Default export logger
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 type ViteLikeEnv = { DEV?: boolean; MODE?: string } | undefined
 
 const env = (import.meta as unknown as { env?: ViteLikeEnv }).env

@@ -16,22 +16,4 @@
 /* Ensure background rect uses default cursor (not pointer/hand) */
 .graph-svg .bg-rect { cursor: default; }
 
-/* CSS-only hover: when a .node is hovered, fade unrelated nodes/links/labels.
-	Uses :has when available for grouping; falls back to simple hover styles. */
-
-/* Modern browsers: target the group that contains the hovered node and adjust siblings */
-/* Keep :has rules as gentle visual helpers but avoid overriding JS class toggles. */
-.graph-svg:has(.node:hover) .node { opacity: 0.12; transition: opacity 160ms ease; }
-.graph-svg:has(.node:hover) .link { opacity: 0.06; transition: opacity 160ms ease; }
-.graph-svg:has(.node:hover) .label { opacity: 0.12; transition: opacity 160ms ease; }
-
-/* But keep the hovered node/link/label fully visible */
-.graph-svg .node:hover { opacity: 1 !important; }
-.graph-svg .node:hover ~ .label { opacity: 1 !important; }
-
-/* Hovering a node should also highlight directly connected links and labels.
-	Since we don't have per-element JS to mark related edges, keep a reasonable
-	visual: hovered node stays full opacity and surrounding elements are faded. */
-
-/* Fallback for older browsers without :has: ensure simple hover still shows node */
-.graph-svg .node:hover { opacity: 1; }
+/* No JS-driven hover visuals: keep nodes/links/labels with default styles. */

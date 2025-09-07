@@ -1,3 +1,9 @@
+/**
+ * src/components/CollectionCard.tsx
+ * Responsibility: Default export CollectionCard
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import React from 'react'
 
 interface Props {

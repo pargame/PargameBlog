@@ -1,0 +1,40 @@
+{
+  "scanned": 32,
+  "used": [
+    "/Users/pargamer/repos/PargameBlog/src/main.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/App.tsx",
+    "/Users/pargamer/repos/PargameBlog/index.html",
+    "/Users/pargamer/repos/PargameBlog/src/lib/content.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/contentIndex.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/date.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/doc.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/frontmatter.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/graph.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/graphUtils.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/logger.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/markdownToHtml.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/moduleUtils.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/posts.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/remarkWikiLinkToSpan.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/search.ts",
+    "/Users/pargamer/repos/PargameBlog/src/pages/AboutPage.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/pages/GraphPage.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/pages/HomePage.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/pages/PostPage.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/components/Footer.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/types/index.ts",
+    "/Users/pargamer/repos/PargameBlog/src/components/CollectionCard.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphModal.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/components/InsightDrawer.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphModalContent.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphView.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphControls.tsx",
+    "/Users/pargamer/repos/PargameBlog/src/hooks/useGraphSimulation.ts",
+    "/Users/pargamer/repos/PargameBlog/src/components/graph/useGraphSimulation.ts"
+  ],
+  "unused": [
+    "/Users/pargamer/repos/PargameBlog/eslint.config.js",
+    "/Users/pargamer/repos/PargameBlog/src/vite-env.d.ts",
+    "/Users/pargamer/repos/PargameBlog/vite.config.js"
+  ]
+}

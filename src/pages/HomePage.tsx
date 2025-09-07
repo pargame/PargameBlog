@@ -1,3 +1,9 @@
+/**
+ * src/pages/HomePage.tsx
+ * Responsibility: Default export HomePage
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { formatPostDate } from '../lib/date';

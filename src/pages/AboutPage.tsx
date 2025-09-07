@@ -1,3 +1,9 @@
+/**
+ * src/pages/AboutPage.tsx
+ * Responsibility: Default export AboutPage
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import React from 'react';
 
 const AboutPage: React.FC = () => {

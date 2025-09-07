@@ -1,3 +1,9 @@
+/**
+ * src/lib/date.ts
+ * Responsibility: Exports formatPostDate
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 export function formatPostDate(dateStr?: string): string {
   if (!dateStr) return ''
   try {

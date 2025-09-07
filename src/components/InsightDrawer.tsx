@@ -1,3 +1,9 @@
+/**
+ * src/components/InsightDrawer.tsx
+ * Responsibility: Default export memo
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import React, { Suspense, memo, useEffect, useRef, useState } from 'react'
 import logger from '../lib/logger'
 // react-markdown's types vary across versions; accept a loose plugin type locally

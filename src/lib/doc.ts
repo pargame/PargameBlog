@@ -1,3 +1,9 @@
+/**
+ * src/lib/doc.ts
+ * Responsibility: Exports getDocFromCollection
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 // Lightweight helpers to load a single markdown document from a given collection
 // under src/content/<collection>/... using Vite's import.meta.glob.
 import { parseFrontmatter } from './frontmatter'

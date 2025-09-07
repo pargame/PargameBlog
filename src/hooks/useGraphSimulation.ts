@@ -1,10 +1,32 @@
+/**
+ * src/hooks/useGraphSimulation.ts
+ * 책임: D3 기반 force-simulation과 관련된 모든 DOM/시뮬레이션 로직을 캡슐화한다.
+ * - SVG 및 그룹(gRoot) 초기화(배경 rect, 줌 레이어)
+ * - 링크/노드/레이블 바인딩(enter/update/exit)
+ * - d3.forceSimulation 생성/재사용, tick 처리 및 자동 정지 로직
+ * - 드래그, 줌, 클릭 이벤트 처리
+ *
+ * 훅은 React 컴포넌트가 렌더링에만 집중할 수 있게 해주며,
+ * 시뮬레이션 상태는 외부 ref(simulationRef 등)를 통해 전달/유지된다.
+ */
 import { useEffect } from 'react'
 import * as d3 from 'd3'
 import type { GraphNode } from '../types'
 import type { RawLink } from '../lib/graphUtils'
 import { colorNode, getMissingSet, mapLinksToNodes } from '../lib/graphUtils'
 
-type NodeDatum = GraphNode & { x?: number; y?: number; vx?: number; vy?: number; fx?: number | null; fy?: number | null }
+type NodeDatum =
+  GraphNode & {
+    x?: number
+    y?: number
+    vx?: number
+    vy?: number
+    fx?: number | null
+    fy?: number | null
+    // 내부 시뮬레이션 상태: 렌더 루프에서 idle/pinned 판단에 사용
+    _idleTicks?: number
+    _autoPinned?: boolean
+  }
 type LinkDatum = { source: string | NodeDatum; target: string | NodeDatum }
 
 type Params = {
@@ -45,10 +67,11 @@ export default function useGraphSimulation(params: Params) {
     showMissingRef,
   } = params
 
+  // Effect: DOM 바인딩, 시뮬레이션 생성/업데이트, 이벤트 바인딩 등은 아래 useEffect에서 처리한다.
   useEffect(() => {
-  const svg = d3.select(svgRef.current!)
-  const W = dims.w || width
-  const H = dims.h || height
+    const svg = d3.select(svgRef.current!)
+    const W = dims.w || width
+    const H = dims.h || height
 
     const kickSimulation = (sim: d3.Simulation<NodeDatum, LinkDatum> | null, target = 0.3, relaxTo = 0.05, relaxAfter = 1200) => {
       if (!sim) return
@@ -102,19 +125,19 @@ export default function useGraphSimulation(params: Params) {
       gRoot = svg.append('g').attr('class', 'zoom-layer').style('opacity', 1)
     }
 
-  // link color (unused variable removed)
+    // link color (unused variable removed)
 
     const nodes: NodeDatum[] = data.nodes as NodeDatum[]
     const rawLinks: RawLink[] = data.links as RawLink[]
     const links: LinkDatum[] = mapLinksToNodes(nodes as GraphNode[], rawLinks) as LinkDatum[]
 
-  // Groups: ensure groups exist (don't use `select(...) || append(...)` because select returns a Selection even when empty)
-  let linkGroup = gRoot.select<SVGGElement>('g.links')
-  if (linkGroup.empty()) linkGroup = gRoot.append('g').attr('class', 'links')
-  let nodeGroup = gRoot.select<SVGGElement>('g.nodes')
-  if (nodeGroup.empty()) nodeGroup = gRoot.append('g').attr('class', 'nodes')
-  let labelGroup = gRoot.select<SVGGElement>('g.labels')
-  if (labelGroup.empty()) labelGroup = gRoot.append('g').attr('class', 'labels')
+    // Groups: ensure groups exist (don't use `select(...) || append(...)` because select returns a Selection even when empty)
+    let linkGroup = gRoot.select<SVGGElement>('g.links')
+    if (linkGroup.empty()) linkGroup = gRoot.append('g').attr('class', 'links')
+    let nodeGroup = gRoot.select<SVGGElement>('g.nodes')
+    if (nodeGroup.empty()) nodeGroup = gRoot.append('g').attr('class', 'nodes')
+    let labelGroup = gRoot.select<SVGGElement>('g.labels')
+    if (labelGroup.empty()) labelGroup = gRoot.append('g').attr('class', 'labels')
 
     // Bind links with join (enter/update/exit) using simulation link objects when available
     type D3Link = d3.SimulationLinkDatum<NodeDatum>
@@ -125,20 +148,20 @@ export default function useGraphSimulation(params: Params) {
       linkDataForBind = (existingLinkForce.links() as D3Link[])
     }
 
-  const linkSel = linkGroup.selectAll<SVGLineElement, D3Link | LinkDatum>('line').data(linkDataForBind as LinkDatum[], (d: D3Link | LinkDatum) => {
+    const linkSel = linkGroup.selectAll<SVGLineElement, D3Link | LinkDatum>('line').data(linkDataForBind as LinkDatum[], (d: D3Link | LinkDatum) => {
       const s = typeof d.source === 'string' ? d.source : (d.source as NodeDatum).id
       const t = typeof d.target === 'string' ? d.target : (d.target as NodeDatum).id
       return `${s}::${t}`
     })
     linkSel.join(
-  enter => enter.append('line').attr('class', 'link').style('opacity', 1).style('cursor', 'default'),
-  update => update,
+      enter => enter.append('line').attr('class', 'link').style('opacity', 1).style('cursor', 'default'),
+      update => update,
       exit => exit.remove()
     )
     linkSelRef.current = linkGroup.selectAll('line')
 
     // Bind nodes
-  const nodeSel = nodeGroup.selectAll<SVGCircleElement, NodeDatum>('circle').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
+    const nodeSel = nodeGroup.selectAll<SVGCircleElement, NodeDatum>('circle').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
     nodeSel.join(
       enter =>
         enter
@@ -184,7 +207,7 @@ export default function useGraphSimulation(params: Params) {
     nodeSelRef.current = nodeGroup.selectAll('circle')
 
     // Bind labels
-  const labelSel = labelGroup.selectAll<SVGTextElement, NodeDatum>('text').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
+    const labelSel = labelGroup.selectAll<SVGTextElement, NodeDatum>('text').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
     labelSel.join(
       enter => enter.append('text').attr('class', 'label').attr('font-size', 11).attr('fill', '#c9d4e3').attr('stroke', 'none').attr('pointer-events', 'none').style('opacity', 1).style('font-family', 'Arial, sans-serif').text(d => d.title),
       update => update.text(d => d.title),
@@ -196,7 +219,7 @@ export default function useGraphSimulation(params: Params) {
     if (simulationRef.current) {
       simulationRef.current.nodes(nodes)
       const linkForce = simulationRef.current.force('link') as d3.ForceLink<NodeDatum, LinkDatum>
-  if (linkForce) linkForce.links(links)
+      if (linkForce) linkForce.links(links)
       kickSimulation(simulationRef.current)
     } else {
       const simulation = d3
@@ -212,50 +235,9 @@ export default function useGraphSimulation(params: Params) {
         .alphaDecay(0.05)
       simulationRef.current = simulation
 
-      const zoom = d3
-        .zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.2, 4])
-        .filter((event: unknown) => {
-          const e = event as { type?: string; button?: number }
-          const t = e.type
-          if (t === 'wheel') return true
-          if (t === 'mousedown') return e.button === 0
-          if (t === 'mousemove' || t === 'mouseup') return true
-          if (
-            t === 'dblclick' ||
-            t === 'touchstart' ||
-            t === 'touchmove' ||
-            t === 'touchend' ||
-            t === 'gesturestart' ||
-            t === 'gesturechange' ||
-            t === 'gestureend'
-          )
-            return false
-          return false
-        })
-        .on('zoom', event => {
-          const tr = (event as d3.D3ZoomEvent<SVGSVGElement, unknown>).transform
-          gRoot.attr('transform', `translate(${tr.x},${tr.y}) scale(${tr.k})`)
-        })
-        .on('start', event => {
-          const se = (event as d3.D3ZoomEvent<SVGSVGElement, unknown>).sourceEvent as Event | undefined
-          if (!se || !(se.target instanceof HTMLElement)) return
-          const target = se.target as HTMLElement
-          const isBg = target.classList.contains('bg-rect') || (target.tagName && target.tagName.toLowerCase() === 'svg')
-          if (isBg) onBackgroundClick?.()
-        })
-
-      svg.on('dblclick.zoom', null)
-      svg.call(zoom)
-      zoomRef.current = zoom
-      svg.call(zoom.transform, d3.zoomIdentity)
-
-      let ticks = 0
-      const didCenter = { current: false }
-
-      const missingSet = getMissingSet(nodes as GraphNode[])
-
+      let frameRequested = false
       const renderPositions = () => {
+        frameRequested = false
         const linkSel = linkSelRef.current
         const nodeSel = nodeSelRef.current
         const labelSel = labelSelRef.current
@@ -278,34 +260,69 @@ export default function useGraphSimulation(params: Params) {
           })
 
         labelSel.attr('x', d => (d.x ?? W / 2) + 10).attr('y', d => (d.y ?? H / 2) + 4)
-
-        ticks++
-        if (!didCenter.current && ticks > 30) {
-          const nx = nodes.map(n => n.x ?? 0)
-          const ny = nodes.map(n => n.y ?? 0)
-          const meanX = d3.mean(nx) ?? W / 2
-          const meanY = d3.mean(ny) ?? H / 2
-          const tx = W / 2 - meanX
-          const ty = H / 2 - meanY
-          const tr = d3.zoomIdentity.translate(tx, ty)
-          svg.transition().duration(300).call(zoomRef.current!.transform, tr)
-          didCenter.current = true
-        }
       }
 
-      simulationRef.current.on('tick', () => renderPositions())
+      const NODE_SPEED_THRESHOLD = 0.5
+      const NODE_IDLE_RATIO = 0.9
+      const IDLE_TICKS_TO_STOP = 5
+
+      const missingSet = getMissingSet(nodes as GraphNode[])
+
+      simulationRef.current.on('tick', () => {
+        if (!frameRequested) {
+          frameRequested = true
+          window.requestAnimationFrame(renderPositions)
+        }
+
+        try {
+          const sim = simulationRef.current
+          if (!sim) return
+          const currentNodes = sim.nodes() as NodeDatum[]
+
+          let autoPinnedCount = 0
+          for (let i = 0; i < currentNodes.length; i++) {
+            const n = currentNodes[i]
+            if (!n._idleTicks) n._idleTicks = 0
+            if (!n._autoPinned) n._autoPinned = false
+
+            const vx = n.vx ?? 0
+            const vy = n.vy ?? 0
+            const s = Math.sqrt(vx * vx + vy * vy)
+            if (s < NODE_SPEED_THRESHOLD) {
+              n._idleTicks = (n._idleTicks ?? 0) + 1
+            } else {
+              n._idleTicks = 0
+            }
+
+            if (!n._autoPinned && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
+              n.vx = 0
+              n.vy = 0
+              n.fx = n.x ?? null
+              n.fy = n.y ?? null
+              n._autoPinned = true
+            }
+
+            if (n._autoPinned) autoPinnedCount++
+          }
+
+          const ratio = currentNodes.length > 0 ? autoPinnedCount / currentNodes.length : 1
+          if (ratio >= NODE_IDLE_RATIO) {
+            try {
+              sim.stop()
+            } catch {
+              // ignore
+            }
+            for (let i = 0; i < currentNodes.length; i++) {
+              currentNodes[i]._idleTicks = 0
+            }
+          }
+        } catch {
+          // ignore
+        }
+      })
+
       kickSimulation(simulationRef.current)
       renderPositions()
-
-      let tickCount = 0
-      const manualTick = () => {
-        tickCount++
-        renderPositions()
-        if (tickCount < 100) setTimeout(manualTick, 16)
-      }
-      setTimeout(() => {
-        if ((ticks as number) === 0) manualTick()
-      }, 1000)
 
       initializedRef.current = true
       const updateVisibility = () => {

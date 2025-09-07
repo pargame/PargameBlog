@@ -1,3 +1,9 @@
+/**
+ * src/lib/frontmatter.ts
+ * Responsibility: Exports parseFrontmatter
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 // Shared frontmatter utilities for Markdown files
 
 export type Frontmatter = Record<string, string>

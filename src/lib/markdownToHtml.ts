@@ -1,3 +1,9 @@
+/**
+ * src/lib/markdownToHtml.ts
+ * Responsibility: Default export markdownToHtml
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import { unified } from 'unified'
 import remarkParse from 'remark-parse'
 import remarkRehype from 'remark-rehype'

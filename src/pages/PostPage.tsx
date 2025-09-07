@@ -1,3 +1,9 @@
+/**
+ * src/pages/PostPage.tsx
+ * Responsibility: Default export PostPage
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import React, { useEffect, useState } from 'react'
 import logger from '../lib/logger'
 import unwrapModuleDefault from '../lib/moduleUtils'

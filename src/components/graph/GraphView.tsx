@@ -1,9 +1,18 @@
+/**
+ * src/components/graph/GraphView.tsx
+ * 책임: 그래프 SVG 래퍼 컴포넌트. UI 제어(토글, 리사이즈 등)와 D3 시뮬레이션 훅을 연결한다.
+ * - 입력: GraphData (nodes, links)
+ * - 출력: 렌더된 SVG 및 제어 UI
+ *
+ * 주석 규칙: 파일 상단에 책임(한 문장), 주요 props 타입/의미를 적고,
+ * 컴포넌트 내부 복잡한 로직에는 짧은 설명을 추가합니다.
+ */
 import React, { memo, useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
 import type { GraphData, GraphNode } from '../../types'
 import './GraphView.css'
 import GraphControls from './GraphControls'
-import useGraphSimulation from './useGraphSimulation'
+import useGraphSimulation from '../../hooks/useGraphSimulation'
 
 type NodeDatum = GraphNode & {
   x?: number

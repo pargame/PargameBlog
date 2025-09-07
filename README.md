@@ -21,7 +21,7 @@ src/
 │   ├── posts/               # 📝 블로그 포스트 (권장 위치)
 │   ├── UnrealEngine/        # 언리얼 엔진 관련 문서
 │   └── [새주제]/            # 새 폴더 → 자동으로 그래프에 추가
-├── posts/                    # � 블로그 포스트 (레거시, 선택)
+├── posts/                    # 블로그 포스트 (legacy compatibility)
 │   └── YYYY-MM-DD-title.md   # 날짜-제목 형식
 ├── lib/                      # 📚 유틸리티 라이브러리
 │   ├── posts.ts              # 블로그 포스트 로더 (두 위치 모두 지원)
@@ -53,7 +53,12 @@ src/
 # 위치(권장): src/content/posts/
 # 파일명: YYYY-MM-DD-slug.md
 # 예시: src/content/posts/2025-09-04-hello-blog.md
-# (레거시) src/posts/ 도 지원됩니다
+# Legacy compatibility
+#
+# The project still supports `src/posts/` for older posts, but new content should
+# be placed under `src/content/`. Where possible, migrate callers to the newer
+# `src/content/` layout; the codebase provides compatibility shims but those
+# are intended for transition and may be removed in a future major version.
 ```
 
 ```markdown

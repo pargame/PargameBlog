@@ -1,6 +1,11 @@
+/**
+ * src/lib/contentIndex.ts
+ * Responsibility: contentIndex
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import type { Item } from './search'
 import { parseFrontmatter } from './frontmatter'
-import logger from './logger'
 
 function extractNameFromPath(path: string) {
   const parts = path.split('/')
@@ -39,10 +44,5 @@ export async function getContentItemsForCollectionAsync(collection: string): Pro
   return items
 }
 
-// Deprecated sync API kept for compatibility; returns empty to avoid eager bundling.
-export function getContentItemsForCollection(_collection: string): Item[] {
-  if (import.meta.env.DEV) {
-    logger.warn('[contentIndex] getContentItemsForCollection is deprecated; use getContentItemsForCollectionAsync')
-  }
-  return []
-}
+// Note: the old synchronous API was intentionally removed to avoid eager bundling.
+// Use getContentItemsForCollectionAsync(collection) instead which dynamically imports content.

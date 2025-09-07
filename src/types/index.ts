@@ -1,3 +1,9 @@
+/**
+ * src/types/index.ts
+ * Responsibility: index
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 // Common types used across the application
 
 export interface PostMeta {

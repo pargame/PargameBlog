@@ -1,3 +1,9 @@
+/**
+ * src/pages/GraphPage.tsx
+ * Responsibility: Default export GraphPage
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { listContentCollections } from '../lib/content'

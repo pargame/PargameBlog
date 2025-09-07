@@ -1,3 +1,9 @@
+/**
+ * src/lib/posts.ts
+ * Responsibility: Exports getAllPosts
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import type { Post, PostMeta } from '../types'
 import { parseFrontmatter } from './frontmatter'
 import logger from './logger'
@@ -102,8 +108,19 @@ async function loadAllPosts(): Promise<Post[]> {
   return asyncCache
 }
 
-// Keep a synchronous API for parts of the app that expect it (legacy code).
-// For correctness, we still compute synchronously from a fresh eager glob in build.
+/**
+ * Backwards-compatible synchronous API kept for callers that expect immediate data.
+ * This surface exists for legacy compatibility; prefer the async `loadAllPosts()` in
+ * new code to avoid assumptions about synchronous I/O and build-time eager imports.
+ *
+ * Migration notes:
+ * - Replace callers of `getAllPosts()` with `await loadAllPosts()` where possible.
+ * - If synchronous access is strictly required, ensure the call happens after the
+ *   build/load phase (DEV builds may behave differently).
+ *
+ * @deprecated Prefer using `loadAllPosts()` (async). This sync API is maintained
+ * for compatibility and may be removed once consumers are migrated.
+ */
 export function getAllPosts(): Post[] {
   if (import.meta.env.DEV) {
     // In dev, computing posts eagerly is acceptable for fast iteration.

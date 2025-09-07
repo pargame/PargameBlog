@@ -1,3 +1,9 @@
+/**
+ * src/lib/search.ts
+ * Responsibility: Exports searchItems
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 // Very small fuzzy search utility for client-side title/slug search
 export type Item = { slug: string; title: string }
 

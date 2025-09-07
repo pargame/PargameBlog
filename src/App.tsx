@@ -1,3 +1,9 @@
+/**
+ * src/App.tsx
+ * Responsibility: Default export App
+ * Auto-generated header: add more descriptive responsibility by hand.
+ */
+
 import { Suspense, lazy } from 'react'
 import { Link, Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
 import Footer from './components/Footer'
