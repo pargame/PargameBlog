@@ -15,9 +15,12 @@ function extractNameFromPath(path: string) {
 
 // Async loader: dynamically import only the requested collection's markdown files.
 export async function getContentItemsForCollectionAsync(collection: string): Promise<Item[]> {
-  const loaders = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
-  const prefix = `../content/${collection}/`
-  const entries = Object.entries(loaders).filter(([p]) => p.startsWith(prefix))
+  const rel = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
+  const abs = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
+  const loaders = { ...rel, ...abs }
+  const relPrefix = `../content/${collection}/`
+  const absPrefix = `/content/${collection}/`
+  const entries = Object.entries(loaders).filter(([p]) => p.startsWith(relPrefix) || p.startsWith(absPrefix))
   const modules: Record<string, string> = {}
   await Promise.all(entries.map(async ([p, loader]) => {
     try {

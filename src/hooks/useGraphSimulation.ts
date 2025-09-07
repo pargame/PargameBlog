@@ -38,7 +38,7 @@ type Params = {
   nodeSelRef: React.MutableRefObject<d3.Selection<SVGCircleElement, NodeDatum, SVGGElement, unknown> | null>
   linkSelRef: React.MutableRefObject<d3.Selection<SVGLineElement, LinkDatum, SVGGElement, unknown> | null>
   labelSelRef: React.MutableRefObject<d3.Selection<SVGTextElement, NodeDatum, SVGGElement, unknown> | null>
-  showMissingRef: React.MutableRefObject<boolean>
+  showMissing: boolean
   simulationStoppedRef?: React.MutableRefObject<boolean | null>
 }
 
@@ -71,7 +71,7 @@ export default function useGraphSimulation(params: Params) {
     nodeSelRef,
     linkSelRef,
     labelSelRef,
-    showMissingRef,
+  showMissing,
     simulationStoppedRef,
   } = params
 
@@ -194,7 +194,7 @@ export default function useGraphSimulation(params: Params) {
 
     type D3Link = d3.SimulationLinkDatum<NodeDatum>
     let linkDataForBind: D3Link[] | LinkDatum[] = links
-    const existingLinkForce = simulationRef.current ? (simulationRef.current.force('link') as d3.ForceLink<NodeDatum, LinkDatum> | null) : null
+  const existingLinkForce = simulationRef.current ? (simulationRef.current.force('link') as d3.ForceLink<NodeDatum, LinkDatum> | null) : null
     if (existingLinkForce && typeof existingLinkForce.links === 'function') {
       linkDataForBind = (existingLinkForce.links() as D3Link[])
     }
@@ -358,11 +358,24 @@ export default function useGraphSimulation(params: Params) {
     )
     labelSelRef.current = labelGroup.selectAll('text')
 
+    // Precompute helpers for visibility control (shared for both branches)
+    const missingSet = getMissingSet(nodes as GraphNode[])
+    const updateVisibility = (show: boolean) => {
+      nodeSelRef.current?.style('display', (d: NodeDatum) => (!show && d.missing ? 'none' : null))
+      labelSelRef.current?.style('display', (d: NodeDatum) => (!show && d.missing ? 'none' : null))
+      linkSelRef.current?.style('display', (d: LinkDatum) => {
+        const s = typeof d.source === 'string' ? d.source : (d.source as NodeDatum).id
+        const t = typeof d.target === 'string' ? d.target : (d.target as NodeDatum).id
+        return !show && (missingSet.has(s) || missingSet.has(t)) ? 'none' : null
+      })
+    }
+
     if (simulationRef.current) {
       simulationRef.current.nodes(nodes)
       const linkForce = simulationRef.current.force('link') as d3.ForceLink<NodeDatum, LinkDatum>
       if (linkForce) linkForce.links(links)
       kickSimulation(simulationRef.current)
+      updateVisibility(showMissing)
     } else {
       const simulation = d3
         .forceSimulation<NodeDatum>(nodes)
@@ -408,7 +421,7 @@ export default function useGraphSimulation(params: Params) {
       const NODE_IDLE_RATIO = 0.9
       const IDLE_TICKS_TO_STOP = 5
 
-      const missingSet = getMissingSet(nodes as GraphNode[])
+  // missingSet already computed above
 
       simulationRef.current.on('tick', () => {
         if (!frameRequested) {
@@ -479,18 +492,8 @@ export default function useGraphSimulation(params: Params) {
       kickSimulation(simulationRef.current)
       renderPositions()
 
-      initializedRef.current = true
-      const updateVisibility = () => {
-        const show = showMissingRef.current
-        nodeSelRef.current?.style('display', (d: NodeDatum) => (!show && d.missing ? 'none' : null))
-        labelSelRef.current?.style('display', (d: NodeDatum) => (!show && d.missing ? 'none' : null))
-        linkSelRef.current?.style('display', (d: LinkDatum) => {
-          const s = typeof d.source === 'string' ? d.source : d.source.id
-          const t = typeof d.target === 'string' ? d.target : d.target.id
-          return !show && (missingSet.has(s) || missingSet.has(t)) ? 'none' : null
-        })
-      }
-      updateVisibility()
+  initializedRef.current = true
+      updateVisibility(showMissing)
 
       return () => {
         simulationRef.current?.stop()
@@ -518,5 +521,5 @@ export default function useGraphSimulation(params: Params) {
         kickTimerRef.current = null
       }
     }
-  }, [svgRef, dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick, initializedRef, kickTimerRef, zoomRef, simulationRef, nodeSelRef, linkSelRef, labelSelRef, showMissingRef, simulationStoppedRef])
+  }, [svgRef, dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick, initializedRef, kickTimerRef, zoomRef, simulationRef, nodeSelRef, linkSelRef, labelSelRef, showMissing, simulationStoppedRef])
 }

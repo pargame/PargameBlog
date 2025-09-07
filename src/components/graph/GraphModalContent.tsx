@@ -10,7 +10,7 @@
 import React, { memo, useEffect, useRef, useState } from 'react'
 import './GraphModalContent.css'
 import logger from '../../lib/logger'
-import type { GraphData, Post } from '../../types'
+import type { GraphData } from '../../types'
 const GraphView = React.lazy(() => import('./GraphView'))
 
 interface Props {
@@ -21,7 +21,8 @@ interface Props {
 }
 
 const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick }) => {
-  const [posts, setPosts] = useState<Array<{ slug: string; title: string }>>([])
+  // Derive a human-friendly label: only the last segment of collection path
+  const leafName = collection.split('/').filter(Boolean).pop() || collection
   const [graphData, setGraphData] = useState<GraphData | null>(null)
   useEffect(() => {
     let mounted = true
@@ -38,21 +39,7 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
     return () => { mounted = false }
   }, [collection])
 
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      try {
-        const postsMod = await import('../../lib/posts')
-        const all: Post[] = await postsMod.loadAllPosts()
-        if (!mounted) return
-        const mapped = all.map((p: Post) => ({ slug: p.slug, title: p.meta?.title ?? p.slug }))
-        setPosts(mapped)
-      } catch (_err) {
-        if (import.meta.env.DEV) logger.warn('[GraphModalContent] posts load failed', _err)
-      }
-    })()
-    return () => { mounted = false }
-  }, [])
+  // Removed global posts fetch: search is now strictly scoped to the current collection.
 
   const [contentItems, setContentItems] = useState<{slug:string;title:string}[]>([])
   useEffect(() => {
@@ -84,21 +71,20 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
     ;(async () => {
       try {
         const searchMod = await import('../../lib/search')
-        const source = contentItems.length > 0 ? contentItems : posts
-        const found = searchMod.searchItems(source, query)
+        const found = searchMod.searchItems(contentItems, query)
         setResults(found)
       } catch {
         setResults([])
       }
     })()
-  }, [query, posts, contentItems])
+  }, [query, contentItems])
 
   return (
     <>
       <div className="modal" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
           <div className="graph-modal-header-left">
-            <h2 className="graph-modal-title">{collection} · Graph</h2>
+            <h2 className="graph-modal-title">{leafName} · Graph</h2>
           </div>
 
           <div className="graph-modal-header-right">
@@ -106,13 +92,13 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
               <input
                 id="graph-search-input"
                 name="graph-search"
-                aria-label={`Search ${collection}`}
+                aria-label={`Search ${leafName}`}
                 autoComplete="off"
                 ref={inputRef}
                 value={query}
                 onChange={e => { setQuery(e.target.value); setOpen(true) }}
                 onFocus={() => setOpen(true)}
-                placeholder={contentItems.length > 0 ? `Search ${collection}...` : 'Search posts...'}
+                placeholder={contentItems.length > 0 ? `Search ${leafName}...` : 'Search posts...'}
                 className="graph-search-input"
               />
               {open && results.length > 0 && (

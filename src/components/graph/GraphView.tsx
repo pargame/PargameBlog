@@ -50,22 +50,8 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   const linkSelRef = useRef<d3.Selection<SVGLineElement, LinkDatum, SVGGElement, unknown> | null>(null)
   const labelSelRef = useRef<d3.Selection<SVGTextElement, NodeDatum, SVGGElement, unknown> | null>(null)
   const [showMissing, setShowMissing] = useState(true)
-  const showMissingRef = useRef<boolean>(true)
 
-  const handleWrapperClick = (e: React.MouseEvent) => {
-    const t = e.target as HTMLElement
-    if (!t) return
-    if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
-      onBackgroundClick?.()
-    }
-  }
-  const handleWrapperMouseDown = (e: React.MouseEvent) => {
-    const t = e.target as HTMLElement
-    if (!t) return
-    if ((t.tagName && t.tagName.toLowerCase() === 'svg') || t.classList.contains('bg-rect')) {
-      onBackgroundClick?.()
-    }
-  }
+  // 배경 클릭은 훅에서 삽입하는 bg-rect가 처리합니다. 래퍼에서는 중복 처리하지 않습니다.
 
   useEffect(() => {
     const el = wrapRef.current
@@ -93,30 +79,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     nodeSelRef,
     linkSelRef,
     labelSelRef,
-    showMissingRef,
+  showMissing,
   simulationStoppedRef,
   })
-  
 
-  useEffect(() => {
-    showMissingRef.current = showMissing
-    const node = nodeSelRef.current
-    const link = linkSelRef.current
-    const label = labelSelRef.current
-    if (node && link && label) {
-      const missingSet = new Set<string>((data.nodes as GraphNode[]).filter((n) => n.missing).map((n) => n.id))
-      node.style('display', (d: NodeDatum) => (!showMissing && d.missing ? 'none' : null))
-      label.style('display', (d: NodeDatum) => (!showMissing && d.missing ? 'none' : null))
-      link.style('display', (d: LinkDatum) => {
-        const s = typeof d.source === 'string' ? d.source : d.source.id
-        const t = typeof d.target === 'string' ? d.target : d.target.id
-        return !showMissing && (missingSet.has(s) || missingSet.has(t)) ? 'none' : null
-      })
-    }
-  }, [showMissing, data.nodes])
 
   return (
-    <div ref={wrapRef} className="graph-wrap" onClick={handleWrapperClick} onMouseDown={handleWrapperMouseDown}>
+    <div ref={wrapRef} className="graph-wrap">
       <svg ref={svgRef} role="img" aria-label="graph view" />
 
   <GraphControls showMissing={showMissing} onToggleShowMissing={() => setShowMissing((v) => !v)} />

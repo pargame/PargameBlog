@@ -21,3 +21,26 @@ export function listContentCollections(): string[] {
   }
   return Array.from(set).sort((a, b) => a.localeCompare(b))
 }
+
+/**
+ * listSubCollections
+ * - parent: sub-root under /content (e.g., 'GraphArchives')
+ * - returns immediate child folder names under /content/{parent}
+ *
+ * Note: Works with nested paths and doesn't import file contents.
+ */
+export function listSubCollections(parent: string): string[] {
+  const relModules = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, unknown>
+  const absModules = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, unknown>
+  const entries = [...Object.keys(relModules), ...Object.keys(absModules)]
+  const marker = `/content/${parent}/`
+  const set = new Set<string>()
+  for (const p of entries) {
+    const idx = p.indexOf(marker)
+    if (idx === -1) continue
+    const after = p.slice(idx + marker.length)
+    const first = after.split('/')[0]
+    if (first) set.add(first)
+  }
+  return Array.from(set).sort((a, b) => a.localeCompare(b))
+}

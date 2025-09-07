@@ -6,7 +6,7 @@
 
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
-import { listContentCollections } from '../lib/content'
+import { listSubCollections } from '../lib/content'
 // GraphModal is heavy (GraphView + d3). Lazy-load it so initial bundle stays small.
 const GraphModal = lazy(() => import('../components/graph/GraphModal'))
 // InsightDrawer uses react-markdown and remark-gfm; lazy-load to avoid bundling them in GraphPage
@@ -15,7 +15,8 @@ import CollectionCard from '../components/CollectionCard'
 
 const GraphPage: React.FC = () => {
   // State
-  const collections = useMemo(() => listContentCollections(), [])
+  // We want sub-collections under content/GraphArchives (e.g., Algorithm, UnrealEngine)
+  const collections = useMemo(() => listSubCollections('GraphArchives'), [])
   const [opened, setOpened] = useState<string | null>(null)
   const [insightId, setInsightId] = useState<string | null>(null)
   const insightIdRef = useRef<string | null>(null)
@@ -35,8 +36,14 @@ const GraphPage: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const toOpen = params.get('open')
-    if (toOpen && collections.includes(toOpen) && opened !== toOpen) {
-      setOpened(toOpen)
+    // Accept forms like 'GraphArchives/Algorithm' and validate the leaf is a known collection
+    if (toOpen) {
+      const parts = toOpen.split('/').filter(Boolean)
+      const leaf = parts[parts.length - 1]
+      if (leaf && collections.includes(leaf)) {
+        const full = parts.length > 1 ? toOpen : `GraphArchives/${leaf}`
+        if (opened !== full) setOpened(full)
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, collections])
@@ -92,11 +99,11 @@ const GraphPage: React.FC = () => {
       <div className="content-section">
         <h2>GraphArchives</h2>
         {collections.length === 0 ? (
-          <p>아직 GraphArchives가 없습니다. <em>content/GraphArchives/&lt;name&gt;</em>에 마크다운을 추가해 보세요.</p>
+          <p>아직 하위 아카이브가 없습니다. <em>content/GraphArchives/&lt;Algorithm|UnrealEngine&gt;</em>에 마크다운을 추가해 보세요.</p>
         ) : (
           collections.map(name => (
-              <CollectionCard key={name} name={name} onOpen={(v) => setOpened(v)} />
-            ))
+            <CollectionCard key={name} name={name} onOpen={(v) => setOpened(`GraphArchives/${v}`)} />
+          ))
         )}
       </div>
 

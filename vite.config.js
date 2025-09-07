@@ -42,8 +42,9 @@ export default defineConfig(({ mode }) => ({
 
           // 2) 앱 레벨의 큰 컴포넌트/페이지를 명시적으로 분리
           // 경로 기반으로 명명된 청크를 생성하면 런타임에서 재사용/캐시 이점이 큽니다.
-          if (id.includes(`${path.sep}src${path.sep}components${path.sep}GraphView`)) return 'graph-view'
-          if (id.includes(`${path.sep}src${path.sep}components${path.sep}GraphModal`)) return 'graph-modal'
+          // NOTE: graph 폴더 하위 경로와 일치하도록 수정
+          if (id.includes(`${path.sep}src${path.sep}components${path.sep}graph${path.sep}GraphView`)) return 'graph-view'
+          if (id.includes(`${path.sep}src${path.sep}components${path.sep}graph${path.sep}GraphModal`)) return 'graph-modal'
           if (id.includes(`${path.sep}src${path.sep}components${path.sep}InsightDrawer`)) return 'insight-drawer'
           if (id.includes(`${path.sep}src${path.sep}pages${path.sep}GraphPage`)) return 'graph-page'
 
