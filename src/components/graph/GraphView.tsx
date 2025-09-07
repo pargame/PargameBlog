@@ -10,6 +10,7 @@ import type { GraphData, GraphNode } from '../../types'
 import './GraphView.css'
 import GraphControls from './GraphControls'
 import useGraphSimulation from '../../hooks/useGraphSimulation'
+import ErrorBoundary from '../ErrorBoundary'
 
 type NodeDatum = GraphNode & {
   x?: number
@@ -81,11 +82,13 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
 
 
   return (
-    <div ref={wrapRef} className="graph-wrap">
-      <svg ref={svgRef} role="img" aria-label="graph view" />
+    <ErrorBoundary>
+      <div ref={wrapRef} className="graph-wrap">
+        <svg ref={svgRef} role="img" aria-label="graph view" />
 
-  <GraphControls showMissing={showMissing} onToggleShowMissing={() => setShowMissing((v) => !v)} />
-    </div>
+        <GraphControls showMissing={showMissing} onToggleShowMissing={() => setShowMissing((v) => !v)} />
+      </div>
+    </ErrorBoundary>
   )
 }
 

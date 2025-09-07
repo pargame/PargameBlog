@@ -103,7 +103,7 @@ export default function useGraphSimulation(params: Params) {
       try {
         if (simulationStoppedRef) simulationStoppedRef.current = false
       } catch (err) {
-        // 최선의 노력: 외부 ref 쓰기가 실패하면 디버그를 위해 로그
+        // best-effort: if writing to the external ref fails, log for debug
         // (not an operational error)
         // eslint-disable-next-line no-console
         console.debug('useGraphSimulation: failed to write simulationStoppedRef', err)
@@ -124,12 +124,12 @@ export default function useGraphSimulation(params: Params) {
             try {
               sim.alphaTarget(relaxTo)
             } catch {
-              // 무시
+              // ignore
             }
             kickTimerRef.current = null
           }, relaxAfter)
       } catch {
-        // 무시
+        // ignore
       }
     }
 
@@ -201,7 +201,7 @@ export default function useGraphSimulation(params: Params) {
       zoomRef.current = zoom
       svg.call(zoom.transform, d3.zoomIdentity)
     } catch {
-      // 무시
+      // ignore
     }
 
     type D3Link = d3.SimulationLinkDatum<NodeDatum>
@@ -304,7 +304,7 @@ export default function useGraphSimulation(params: Params) {
         try {
           if (!simulationStoppedRef || !simulationStoppedRef.current) return
         } catch (err) {
-          // 치명적이지 않음: 테스트 환경에서 DOM을 사용할 수 없을 수 있음
+          // non-fatal: DOM may be unavailable in test environments
           // eslint-disable-next-line no-console
           console.debug('useGraphSimulation: hover handler early exit', err)
           return
@@ -347,7 +347,7 @@ export default function useGraphSimulation(params: Params) {
         linksAll.classed('faded-link', false)
       })
     } catch {
-      // DOM이 아닌 환경에서는 무시
+      // ignore in non-DOM environments
     }
 
   // 레이블 바인딩: 노드 레이블을 별도 그룹에 추가하여 노드/링크보다 위에
@@ -370,7 +370,7 @@ export default function useGraphSimulation(params: Params) {
     )
     labelSelRef.current = labelGroup.selectAll('text')
 
-    // 가시성 제어를 위한 헬퍼 미리 계산 (두 브랜치에서 공유)
+    // Precompute helpers for visibility control (shared for both branches)
     const missingSet = getMissingSet(nodes as GraphNode[])
     const updateVisibility = (show: boolean) => {
       nodeSelRef.current?.style('display', (d: NodeDatum) => (!show && d.missing ? 'none' : null))
@@ -433,7 +433,7 @@ export default function useGraphSimulation(params: Params) {
       const NODE_IDLE_RATIO = 0.9
       const IDLE_TICKS_TO_STOP = 5
 
-  // missingSet은 위에서 이미 계산됨
+  // missingSet already computed above
 
       simulationRef.current.on('tick', () => {
         if (!frameRequested) {
@@ -485,12 +485,12 @@ export default function useGraphSimulation(params: Params) {
                 try {
                   if (simulationStoppedRef) simulationStoppedRef.current = true
                 } catch (innerErr) {
-                  // 최선의 노력 쓰기; 로그하고 계속
+                  // best-effort write; log and continue
                   // eslint-disable-next-line no-console
                   console.debug('useGraphSimulation: failed to mark stopped', innerErr)
                 }
               } catch (err) {
-                // 렌더링 오류 무시, 하지만 디버깅을 위해 로그
+                // ignore rendering error, but log for debugging
                 // eslint-disable-next-line no-console
                 console.debug('useGraphSimulation: error stopping simulation', err)
               }
@@ -499,7 +499,7 @@ export default function useGraphSimulation(params: Params) {
               }
             }
           } catch (err) {
-            // 틱 루프 오류 무시, 하지만 디버깅을 돕기 위해 로그
+            // ignore tick loop error, but log to assist debugging
             // eslint-disable-next-line no-console
             console.debug('useGraphSimulation: tick handler error', err)
           }
@@ -526,15 +526,27 @@ export default function useGraphSimulation(params: Params) {
     }
 
     return () => {
-      simulationRef.current?.stop()
-      simulationRef.current = null
+      try {
+        if (simulationRef.current) {
+          simulationRef.current.stop()
+          simulationRef.current = null
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('useGraphSimulation: cleanup simulation error', e)
+      }
       initializedRef.current = false
-      nodeSelRef.current = null
-      linkSelRef.current = null
-      labelSelRef.current = null
-      if (kickTimerRef.current) {
-        window.clearTimeout(kickTimerRef.current)
-        kickTimerRef.current = null
+      try { nodeSelRef.current = null } catch {}
+      try { linkSelRef.current = null } catch {}
+      try { labelSelRef.current = null } catch {}
+      try {
+        if (kickTimerRef.current) {
+          window.clearTimeout(kickTimerRef.current)
+          kickTimerRef.current = null
+        }
+      } catch (e) {
+        // eslint-disable-next-line no-console
+        console.debug('useGraphSimulation: cleanup timer error', e)
       }
     }
   }, [svgRef, dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick, initializedRef, kickTimerRef, zoomRef, simulationRef, nodeSelRef, linkSelRef, labelSelRef, showMissing, simulationStoppedRef])
