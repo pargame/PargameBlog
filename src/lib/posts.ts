@@ -146,5 +146,17 @@ export function getPostBySlug(slug: string): Post | undefined {
   return getAllPosts().find(p => p.slug === slug)
 }
 
+/**
+ * Async helper that should be used by new code to avoid relying on the
+ * synchronous legacy surface `getAllPosts()`.
+ *
+ * Example:
+ *   const post = await getPostBySlugAsync(slug)
+ */
+export async function getPostBySlugAsync(slug: string): Promise<Post | undefined> {
+  const posts = await loadAllPosts()
+  return posts.find(p => p.slug === slug)
+}
+
 // Debug helper: which md files were matched
 // (internal) debug helper was removed in production

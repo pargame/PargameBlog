@@ -43,5 +43,17 @@ Examples
    * - returns: normalized score number
    */
 
+## 리포지토리별 추가 규약
+
+- Deprecated 표기
+  - 코드에서 특정 API를 더 이상 권장하지 않을 때는 JSDoc이나 상단 주석에 `@deprecated` 표기를 하세요. 가능한 경우 대체 API를 명시하고 간단한 마이그레이션 예시를 추가합니다.
+  - 예: `// @deprecated Use loadAllPosts() (async) instead of getAllPosts()`
+
+- TODO/FIXME 형식 권장
+  - `// TODO(owner#issue): 요약` 또는 `// FIXME(#123): 왜 고쳐야 하는가` 형식으로 작성하고, PR에서 관련 이슈를 링크하세요.
+
+- LEGACY 마커
+  - 레거시 코드 영역에는 `// LEGACY:`를 사용하여 유지 이유와 제거 예정(또는 마이그레이션) 일정을 간단히 남기세요.
+
 Review
 - Keep comments updated with PRs that change the code. CI does not validate comments but reviewers should ensure comments remain accurate.

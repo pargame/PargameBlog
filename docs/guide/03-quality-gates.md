@@ -124,6 +124,17 @@ jobs:
 - 링크/마크다운 검증: 문서 내 위키링크 유효성 검사 스크립트 추가.
 - pre-commit 훅: lint-staged+husky로 변경 파일에 대해 린트/타입 빠른 체크.
 
+## TODO/FIXME/Deprecated 처리 절차 (품질 게이트 관련)
+
+- PR에서 발견된 `TODO`/`FIXME`는 가능한 경우 해당 이슈를 생성하고 PR에 이슈 번호를 링크해야 합니다. CI 머지 전에 장기 TODO로 남겨둘 수 없도록 검토하세요.
+- Deprecated API(예: `getAllPosts()`)를 사용하는 PR은 마이그레이션 계획을 포함해야 합니다. 간단한 예시:
+  1. 코드 검색: `grep -R "getAllPosts(" -n src || true`
+  2. 호출부 변경: `const posts = await loadAllPosts()` (필요 시 async로 변환)
+  3. 타입체크/린트/빌드 통과 확인
+  4. PR 설명에 변경 영향과 테스트 결과를 기록
+
+- LEGACY 표식이 있는 코드 변경 시에는 마이그레이션 문서 또는 이슈 링크를 PR에 반드시 포함하세요.
+
 ## 트러블슈팅 체크리스트
 
 - 린트가 no-unused-vars로 실패: `_evt`, `_unused`와 같이 언더스코어 접두 사용 또는 제거.

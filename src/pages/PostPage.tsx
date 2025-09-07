@@ -5,11 +5,12 @@
  */
 
 import React, { useEffect, useState } from 'react'
+import type { Post } from '../types'
 import logger from '../lib/logger'
 import unwrapModuleDefault from '../lib/moduleUtils'
 import { Link, useParams } from 'react-router-dom'
 import ReactMarkdown from 'react-markdown'
-import { getPostBySlug } from '../lib/posts'
+import { getPostBySlugAsync } from '../lib/posts'
 import markdownToHtml from '../lib/markdownToHtml'
 
 type MarkdownPlugin = unknown
@@ -39,7 +40,7 @@ function createSafeWrapper(candidate: unknown): MarkdownPlugin | null {
 
 const PostPage: React.FC = () => {
   const { slug } = useParams()
-  const post = slug ? getPostBySlug(slug) : undefined
+  const [post, setPost] = useState<Post | undefined>(undefined)
   const [remarkGfm, setRemarkGfm] = useState<MarkdownPlugin | null>(null)
   const [html, setHtml] = useState<string | null>(null)
 
@@ -57,6 +58,23 @@ const PostPage: React.FC = () => {
     })()
     return () => { mounted = false }
   }, [])
+
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      if (!slug) return
+      try {
+        const p = await getPostBySlugAsync(slug)
+        if (!mounted) return
+        setPost(p)
+      } catch (e) {
+        logger.error('failed to load post:', e)
+        if (!mounted) return
+        setPost(undefined)
+      }
+    })()
+    return () => { mounted = false }
+  }, [slug])
 
   useEffect(() => {
     let mounted = true
