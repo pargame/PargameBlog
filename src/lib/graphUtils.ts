@@ -6,9 +6,7 @@
  * - getMissingSet: 누락된(missing) 노드들의 id 집합 반환
  * - colorNode: 노드 표시 색상 결정(간단한 스타일 헬퍼)
  */
-import type { GraphNode } from '../types'
-
-export type RawLink = { source: string; target: string }
+import type { GraphNode, RawLink } from '../types'
 
 // mapLinksToNodes: rawLinks는 source/target이 문자열 id인 배열이다.
 // 이 함수를 통해 노드 객체 배열을 이용하여 실제 node 참조로 변환하거나,

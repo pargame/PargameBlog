@@ -9,10 +9,19 @@
  * 훅은 React 컴포넌트가 렌더링에만 집중할 수 있게 해주며,
  * 시뮬레이션 상태는 외부 ref(simulationRef 등)를 통해 전달/유지된다.
  */
+/**
+ * 계약 (간단한 계약):
+ * - 입력(Params): 여러 React ref와 데이터 객체(nodes, links)를 받음. (자세한 타입은 파일 내 `Params` 참조)
+ * - 출력: 부수효과로 SVG DOM을 수정하고 simulationRef/selRef들을 설정함.
+ * - 라이프사이클: 훅은 내부적으로 cleanup을 제공하여 컴포넌트 언마운트 시 시뮬레이션을 중지하고 참조를 해제합니다.
+ * - 에지케이스: 비어 있는 노드/링크, missing 노드 처리, 시뮬레이션 재사용(존재 시 업데이트) 지원.
+ * - 사용예: useGraphSimulation({ svgRef, wrapRef, dims, width, height, data, ...refs })
+ * - 테스트 팁: DOM을 실제로 생성하지 않는 환경에서는 ref들에 더미 엘리먼트를 할당하여 초기화/정리 흐름을 검증하세요.
+ */
 import { useEffect } from 'react'
 import * as d3 from 'd3'
 import type { GraphNode } from '../types'
-import type { RawLink } from '../lib/graphUtils'
+import type { RawLink } from '../types'
 import { colorNode, getMissingSet, mapLinksToNodes } from '../lib/graphUtils'
 
 type NodeDatum =

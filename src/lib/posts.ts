@@ -143,6 +143,10 @@ export function getAllPosts(): Post[] {
 export { loadAllPosts }
 
 export function getPostBySlug(slug: string): Post | undefined {
+  // Runtime deprecation warning to encourage migration to async API
+  if (import.meta.env.DEV) {
+    logger.warn('[posts] getPostBySlug is deprecated; prefer getPostBySlugAsync')
+  }
   return getAllPosts().find(p => p.slug === slug)
 }
 

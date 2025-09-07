@@ -2,7 +2,7 @@
 
 이 문서는 커밋/PR/릴리스 전에 통과해야 하는 품질 게이트를 단계별로 정리합니다. 현재 프로젝트의 스크립트와 도구에 맞춰 최소 세트로 구성되어 있으며, 선택적 확장(테스트/E2E)도 제안합니다.
 
-## 빠른 실행 요약
+## 빠른 실행 요약 (유지보수 체크리스트)
 
 1) 타입체크
 
@@ -10,7 +10,7 @@
 npm run typecheck
 ```
 
-- 성공 기준: 오류 0. 경고는 무시 가능.
+- 성공 기준: 오류 0.
 
 2) 린트
 
@@ -18,7 +18,7 @@ npm run typecheck
 npm run lint
 ```
 
-- 성공 기준: 에러 0. 경고는 추후 개선 대상으로만 기록.
+- 성공 기준: 에러 0.
 
 3) 프로덕션 빌드
 
@@ -26,7 +26,7 @@ npm run lint
 npm run build
 ```
 
-- 성공 기준: 빌드 성공(종료 코드 0) 및 산출물 생성(dist/).
+- 성공 기준: 빌드 성공(종료 코드 0) 및 산출물 생성.
 
 4) 스모크 테스트(로컬 확인, 선택)
 
@@ -34,7 +34,7 @@ npm run build
 npm run dev
 ```
 
-- 성공 기준(수동 확인): 홈 진입, Graph 페이지 열기, 그래프 노드가 렌더링되고 클릭 시 오른쪽 패널에 문서가 열림.
+- 수동 확인: 홈 진입, Graph 페이지 열기, 그래프 노드 렌더링 및 노드 클릭 후 문서 패널 동작.
 
 ## 상세 절차와 합격 기준
 
@@ -128,6 +128,15 @@ jobs:
 
 - PR에서 발견된 `TODO`/`FIXME`는 가능한 경우 해당 이슈를 생성하고 PR에 이슈 번호를 링크해야 합니다. CI 머지 전에 장기 TODO로 남겨둘 수 없도록 검토하세요.
 - Deprecated API(예: `getAllPosts()`)를 사용하는 PR은 마이그레이션 계획을 포함해야 합니다. 간단한 예시:
+  - 그래프 API 마이그레이션 예시(중요):
+    1. 레거시 동기 API(`buildGraphForCollection`)를 호출하고 있다면, 비동기 API로 마이그레이션합니다.
+       ```diff
+       - const g = buildGraphForCollection('Unreal')
+       + const mod = await import('../../lib/graph')
+       + const g = await mod.buildGraphForCollectionAsync('Unreal')
+       ```
+    2. `src/components/graph/useGraphSimulation` 같은 얇은 래퍼는 제거되었을 수 있으니, `src/hooks/useGraphSimulation`로 직접 import하세요.
+    3. 변경 후 `npm run typecheck && npm run lint && npm run build`를 실행해 문제를 확인합니다.
   1. 코드 검색: `grep -R "getAllPosts(" -n src || true`
   2. 호출부 변경: `const posts = await loadAllPosts()` (필요 시 async로 변환)
   3. 타입체크/린트/빌드 통과 확인

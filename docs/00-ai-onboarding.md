@@ -1,14 +1,13 @@
-# AI 온보딩 요약서 (읽기 1~2분)
+# 빠른 유지보수 레퍼런스
 
-이 문서는 새로운 대화(메모리 없음)에서 AI 에이전트가 즉시 레포 상태를 파악하고 안전하게 작업을 이어가기 위한 최소 핵심 정보입니다.
+간단: 이 문서는 레포의 "현재 상태"를 빠르게 파악하고, 안전하게 수정 및 마이그레이션하는 데 필요한 핵심 정보를 제공합니다.
 
-## 프로젝트 한눈에 보기
-- 타입/스택: Vite 7 + React 19 + TypeScript 5, React Router v7
-- 콘텐츠: `src/posts/*.md`(레거시) 또는 `src/content/posts/*.md`를 읽어 홈 목록 → `/posts/:slug` 상세 렌더링
-- 마크다운 파서: 브라우저 안전한 커스텀 프런트매터 파서 + `react-markdown` + `remark-gfm`
-- 라우팅: BrowserRouter + 동적 `basename`(Vite `BASE_URL` 반영), SPA 404 리다이렉트(`public/404.html`)
-- 그래프 뷰: D3.js 기반 위키링크 그래프 시각화 (`src/content/<collection>` 폴더 단위)
-  - 성능: 그래프 빌드는 동적 import(비동기)로 수행되어 초기 청크를 최소화합니다
+## 핵심 요약
+- 스택: Vite 7, React 19, TypeScript 5
+- 콘텐츠: `src/content/<collection>/` 구조를 권장합니다. (레거시: `src/posts/` 존재)
+- 그래프: D3 기반, `buildGraphForCollectionAsync()` 비동기 API 사용
+- 핵심 스크립트: `npm run dev`, `npm run typecheck`, `npm run lint`, `npm run build`
+  - 구현 변경: 그래프 빌드는 비동기 API `buildGraphForCollectionAsync()`를 사용합니다. 호출부는 lazy import로 모듈을 가져와 사용하세요 (예: `const gmod = await import('../../lib/graph'); const g = await gmod.buildGraphForCollectionAsync('Unreal')`).
 - CI/CD: GitHub Actions → 타입체크/린트/빌드/Pages 배포 (Linux 러너에서 Rollup 네이티브 패키지 명시 설치)
 
 ## 필수 파일 맵(편집 지점)
@@ -24,7 +23,7 @@ src/
     GraphPage.tsx        # 그래프 뷰 페이지 (컬렉션 선택)
   lib/
   posts.ts             # 마크다운 로더(프런트매터 파싱, 정렬, 캐시) - 동적 로딩 리팩토링 완료
-    graph.ts             # 위키링크 그래프 데이터 생성
+    graph.ts             # 위키링크 그래프 데이터 생성 (export: buildGraphForCollectionAsync)
     content.ts           # 콘텐츠 컬렉션 관리
     doc.ts               # 문서 로더
     remarkWikiLinkToSpan.ts # 위키링크 마크다운 파서
@@ -69,12 +68,17 @@ excerpt: 짧은 요약
 본문은 여기부터 마크다운으로 작성합니다.
 ```
 
-## 그래프 뷰 문서 작성 규칙
-- 위치: `src/content/<collection>/` (예: `src/content/Unreal/`, `src/content/Algorithm/`)
-- 파일명: `PageName.md` (한글명도 지원)
-- 위키링크: `[[대상페이지]]` 또는 `[[대상페이지|표시명]]` 형식 사용
-- 각 컬렉션은 독립적인 그래프로 시각화됨
-- **자동 감지**: 새로운 폴더를 `src/content/` 아래 생성하면 자동으로 그래프 페이지에 나타남
+## 그래프 문서 작성 규칙 (유지보수 관점)
+- 위치: `src/content/<collection>/` (예: `src/content/Unreal/`)
+- 파일명: `PageName.md` (한글명 허용)
+- 위키링크: `[[Target]]` 또는 `[[Target|Label]]` — 파서가 Target id를 추출합니다. Anchor/Label은 무시됩니다.
+- 마이그레이션: 기존 동기 API는 제거되었습니다. 그래프를 처리할 때는 `buildGraphForCollectionAsync()`를 사용하세요.
+
+예시:
+```ts
+const gmod = await import('../../lib/graph')
+const graph = await gmod.buildGraphForCollectionAsync('Unreal')
+```
 
 ## 마크다운 로더 동작(중요 구현 포인트)
 - `src/lib/posts.ts` (리팩토링됨)
@@ -94,7 +98,7 @@ excerpt: 짧은 요약
 - 무거운 의존성 및 데이터는 모두 동적 import로 분리합니다
   - posts 검색/로딩: `loadAllPosts()`
   - content 인덱스: `getContentItemsForCollectionAsync()`
-  - 그래프 빌드: `buildGraphForCollectionAsync()`
+  - 그래프 빌드: `buildGraphForCollectionAsync()` (동기형 빌더는 제거됨 — 모든 호출은 비동기 패턴으로 마이그레이션 필요)
   - 마크다운 렌더러: `react-markdown`/`remark-gfm`은 lazy 로드
 - 페이지/모달은 경량 셸(React.lazy + Suspense)로 유지합니다
 - Vite `manualChunks`는 vendor/d3/markdown 및 주요 컴포넌트 별로 분리되어 있습니다

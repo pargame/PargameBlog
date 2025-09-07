@@ -25,14 +25,9 @@ export interface GraphNode {
   missing?: boolean
 }
 
-export interface GraphLink {
-  source: string
-  target: string
-}
-
 export interface GraphData {
   nodes: GraphNode[]
-  links: GraphLink[]
+  links: RawLink[]
 }
 
 export interface Document {
@@ -40,3 +35,6 @@ export interface Document {
   title: string
   content: string
 }
+
+// RawLink: internal representation where source/target are string ids.
+export type RawLink = { source: string; target: string }
