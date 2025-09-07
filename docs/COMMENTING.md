@@ -1,42 +1,42 @@
-# Commenting rules for this repo
+# 이 저장소의 주석 규칙
 
-Purpose
-- Make code easier to understand for future contributors.
-- Keep comments concise, factual, and up-to-date.
+목적
+- 향후 기여자가 코드를 더 쉽게 이해하도록 돕습니다.
+- 주석은 간결하고 사실에 기반하며 최신 상태로 유지하세요.
 
-Top-of-file header
-- Every module should start with a short header (3-6 lines):
-  - path of the file (optional)
-  - single-sentence responsibility description
-  - important public exports / props summary
+파일 상단 헤더
+- 모든 모듈은 짧은 헤더(3-6줄)로 시작해야 합니다:
+  - 파일 경로(선택 사항)
+  - 한 문장으로 된 책임 설명
+  - 주요 공개 내보내기(export) / props 요약
 
-Public exports / props
-- For exported functions/components, add a short param/return description using JSDoc where helpful.
-- For React components, document prop interface above the interface/type declaration.
+공개 API / Props
+- 내보내는 함수나 컴포넌트에는 필요하면 JSDoc으로 파라미터/반환값을 간단히 설명하세요.
+- React 컴포넌트의 경우, props 인터페이스는 인터페이스/타입 선언 위에 문서화하세요.
 
-Inline comments
-- Use short paragraph comments for non-trivial logic sections (why vs what).
-- Avoid commenting obvious code (don't restate what is already clear).
+인라인 주석
+- 복잡한 로직 섹션에는 짧은 문단 주석으로 "왜(why)"를 설명하세요 — "무엇(what)"이 이미 명확하면 재서술하지 마세요.
+- 명백한 코드에는 주석을 남기지 마세요(코드가 이미 설명하는 내용을 반복하지 마세요).
 
-TODOs and Deprecated
-- Use `// TODO:` for actionable future work.
-- Use `// @deprecated` on top of deprecated exports and link to recommended alternative.
+TODO 및 Deprecated
+- 실행 가능한 향후 작업에는 `// TODO:` 를 사용하세요.
+- 더 이상 권장하지 않는 공개 API에는 상단에 `// @deprecated` 표기를 추가하고, 권장 대체안을 링크하세요.
  
-Markers and conventions
-- Use `// TODO:` only for short, actionable tasks. Include an owner or PR when appropriate: `// TODO(owner): reason`.
-- Use `// FIXME:` for known bugs that must be addressed before shipping. Prefer linking to an issue: `// FIXME(#123): description`.
-- Use `// LEGACY:` for code or APIs kept for backward compatibility. Add a short migration note and a planned removal timeline if available.
-- Avoid leaving `TODO`/`FIXME` indefinitely; reviewers should convert them into issues or resolve before long-lived merges.
+마커 및 규약
+- `// TODO:`는 짧고 실행 가능한 작업에만 사용하세요. 적절하면 소유자나 이슈를 포함하세요: `// TODO(owner): reason`.
+- `// FIXME:`는 출시 이전에 반드시 해결해야 하는 알려진 버그에 사용하세요. 가능하면 이슈를 링크하세요: `// FIXME(#123): description`.
+- `// LEGACY:`는 하위 호환을 위해 남겨둔 코드나 API에 사용하세요. 간단한 마이그레이션 안내와 제거 예정 일정을 추가하세요(있다면).
+- `TODO`/`FIXME`를 무기한 방치하지 마세요; 리뷰어는 장기 TODO를 이슈로 전환하거나 병합 전에 해결하도록 요구해야 합니다.
 
-Examples
-- File header example:
+예시
+- 파일 헤더 예시:
   /**
    * src/foo/bar.ts
    * Responsibility: Manage widget lifecycle and state transitions
    * Export: createWidget(options)
    */
 
-- Small function example:
+- 작은 함수 예시:
   /**
    * computeScore(user, options)
    * - user: User object
@@ -55,5 +55,5 @@ Examples
 - LEGACY 마커
   - 레거시 코드 영역에는 `// LEGACY:`를 사용하여 유지 이유와 제거 예정(또는 마이그레이션) 일정을 간단히 남기세요.
 
-Review
-- Keep comments updated with PRs that change the code. CI does not validate comments but reviewers should ensure comments remain accurate.
+검토
+- 코드를 변경하는 PR에서는 주석도 함께 최신화하세요. CI가 주석을 검사하지는 않지만, 리뷰어는 주석이 정확한지 확인해야 합니다.

@@ -7,4 +7,4 @@
 
 export { default } from '../../hooks/useGraphSimulation'
 
-// TODO: remove this wrapper after migrating all callers to import from `../..\/hooks\/useGraphSimulation`
+// LEGACY: compatibility wrapper. Remove after migrating callers to import from `../../hooks/useGraphSimulation`.

@@ -118,8 +118,13 @@ async function loadAllPosts(): Promise<Post[]> {
  * - If synchronous access is strictly required, ensure the call happens after the
  *   build/load phase (DEV builds may behave differently).
  *
- * @deprecated Prefer using `loadAllPosts()` (async). This sync API is maintained
- * for compatibility and may be removed once consumers are migrated.
+ * @deprecated Use `loadAllPosts()` (async) instead. Example migration:
+ * // OLD: const posts = getAllPosts()
+ * // NEW: const posts = await loadAllPosts()
+ *
+ * This sync API is maintained for compatibility and may be removed once
+ * consumers are migrated. Relying on this in production bundles can cause
+ * unexpected empty caches since it doesn't perform async imports.
  */
 export function getAllPosts(): Post[] {
   if (import.meta.env.DEV) {
@@ -142,6 +147,12 @@ export function getAllPosts(): Post[] {
 
 export { loadAllPosts }
 
+/**
+ * @deprecated Use `getPostBySlugAsync(slug)` instead to avoid relying on the
+ * synchronous legacy cache. Example:
+ * // OLD: const post = getPostBySlug(slug)
+ * // NEW: const post = await getPostBySlugAsync(slug)
+ */
 export function getPostBySlug(slug: string): Post | undefined {
   // Runtime deprecation warning to encourage migration to async API
   if (import.meta.env.DEV) {
