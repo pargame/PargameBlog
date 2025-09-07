@@ -4,7 +4,7 @@
 /* faded/underlit visuals for hover de-emphasis */
 .graph-wrap svg circle.node { opacity: 1; transition: opacity 160ms ease; }
 .graph-wrap svg line.link { opacity: 1; transition: opacity 160ms ease; }
-.graph-wrap svg line.link { stroke: #8ea3b8; stroke-opacity: 0.6; stroke-linecap: round; stroke-width: 1.2px; pointer-events: none; }
+.graph-wrap svg line.link { stroke: #7a92a3; stroke-opacity: 0.45; stroke-linecap: round; stroke-width: 0.8px; pointer-events: none; }
 
 /* Remove node stroke set by D3 attributes to improve label contrast */
 .graph-wrap svg circle.node { stroke: none !important; stroke-width: 0 !important; }

@@ -291,7 +291,7 @@ export default function useGraphSimulation(params: Params) {
   // consider a node 'slow' if its speed < NODE_SPEED_THRESHOLD
   // relaxed: consider nodes 'slow' even at higher instantaneous speeds so
   // auto-pinning happens earlier for large graphs
-  const NODE_SPEED_THRESHOLD = 0.2
+  const NODE_SPEED_THRESHOLD = 0.5
   // if this fraction of nodes are slow, start counting idle ticks
   const NODE_IDLE_RATIO = 0.9
   // few consecutive ticks before stopping (very aggressive)
