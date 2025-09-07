@@ -35,6 +35,7 @@ type NodeDatum =
     // 내부 시뮬레이션 상태: 렌더 루프에서 idle/pinned 판단에 사용
     _idleTicks?: number
     _autoPinned?: boolean
+  _dragging?: boolean
   }
 type LinkDatum = { source: string | NodeDatum; target: string | NodeDatum }
 
@@ -81,6 +82,19 @@ export default function useGraphSimulation(params: Params) {
     const svg = d3.select(svgRef.current!)
     const W = dims.w || width
     const H = dims.h || height
+
+    /**
+     * Helper: Convert a DOM pointer event (or D3 drag event.sourceEvent) into
+     * graph-space coordinates (accounting for current zoom transform).
+     * Returns [x, y] in graph coordinate space.
+     */
+    const pointerToGraphCoords = (ev: Event | d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>) => {
+      const se = (ev as d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>).sourceEvent as Event | undefined
+      const source = se ?? (ev as Event)
+      const pt = d3.pointer(source, svg.node() as SVGSVGElement)
+      const t = d3.zoomTransform(svg.node() as SVGSVGElement)
+      return [(pt[0] - t.x) / t.k, (pt[1] - t.y) / t.k]
+    }
 
     const kickSimulation = (sim: d3.Simulation<NodeDatum, LinkDatum> | null, target = 0.3, relaxTo = 0.05, relaxAfter = 1200) => {
       if (!sim) return
@@ -148,6 +162,47 @@ export default function useGraphSimulation(params: Params) {
     let labelGroup = gRoot.select<SVGGElement>('g.labels')
     if (labelGroup.empty()) labelGroup = gRoot.append('g').attr('class', 'labels')
 
+    // Initialize zoom/pan behavior and bind to the SVG. This enables
+    // background drag-to-pan. Wrapped in try/catch so non-DOM test
+    // environments won't blow up.
+    try {
+      const zoom = d3
+        .zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.2, 4])
+        .filter((e: unknown) => {
+          // Filter to allow wheel and left-button mousedown interactions,
+          // and ignore other pointer types we don't want to trigger zoom.
+          const ev = e as Event & { type?: string; button?: number }
+          const t = ev && ev.type
+          if (t === 'wheel') return true
+          if (t === 'mousedown') return ev.button === 0
+          return t === 'mousemove' || t === 'mouseup'
+        })
+        .on('zoom', (ev: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+          // Apply the current transform to the root group.
+          const tr = ev.transform
+          gRoot.attr('transform', `translate(${tr.x},${tr.y}) scale(${tr.k})`)
+        })
+        .on('start', (ev: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
+          // If the user initiated the zoom on the background rect or svg,
+          // treat it as a background interaction and propagate the click
+          // callback.
+          const se = ev.sourceEvent as Event | undefined
+          if (!se || !(se.target instanceof HTMLElement)) return
+          const target = se.target as HTMLElement
+          const isBg = target.classList.contains('bg-rect') || (target.tagName && target.tagName.toLowerCase() === 'svg')
+          if (isBg) onBackgroundClick?.()
+        })
+
+      // disable default dblclick zoom and attach
+      svg.on('dblclick.zoom', null)
+      svg.call(zoom)
+      zoomRef.current = zoom
+      svg.call(zoom.transform, d3.zoomIdentity)
+    } catch {
+      // non-fatal: if zoom fails (e.g. during SSR-less tests), continue without it
+    }
+
     // Bind links with join (enter/update/exit) using simulation link objects when available
     type D3Link = d3.SimulationLinkDatum<NodeDatum>
     let linkDataForBind: D3Link[] | LinkDatum[] = links
@@ -196,14 +251,32 @@ export default function useGraphSimulation(params: Params) {
                     ;(se as Event).stopPropagation()
                   }
                   if (!event.active) kickSimulation(simulationRef.current, 0.3)
-                  d.fx = d.x ?? null
-                  d.fy = d.y ?? null
+                  // mark dragging state so auto-pinning logic ignores this node
+                  d._dragging = true
+                  // map pointer to graph coordinates considering current zoom transform
+                  // Map the pointer (or sourceEvent) into graph coordinates.
+                  try {
+                    const [gx, gy] = pointerToGraphCoords(event as d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>)
+                    d.fx = gx
+                    d.fy = gy
+                  } catch {
+                    d.fx = d.x ?? null
+                    d.fy = d.y ?? null
+                  }
                 })
                 .on('drag', (event, d) => {
-                  d.fx = event.x
-                  d.fy = event.y
+                  try {
+                    const [gx, gy] = pointerToGraphCoords(event as d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>)
+                    d.fx = gx
+                    d.fy = gy
+                  } catch {
+                    d.fx = event.x
+                    d.fy = event.y
+                  }
                 })
                 .on('end', (event, d) => {
+                  // clear dragging flag
+                  d._dragging = false
                   if (!event.active && simulationRef.current) simulationRef.current.alphaTarget(0)
                   d.fx = null
                   d.fy = null
@@ -289,10 +362,12 @@ export default function useGraphSimulation(params: Params) {
           const currentNodes = sim.nodes() as NodeDatum[]
 
           let autoPinnedCount = 0
+          let draggingCount = 0
           for (let i = 0; i < currentNodes.length; i++) {
             const n = currentNodes[i]
             if (!n._idleTicks) n._idleTicks = 0
             if (!n._autoPinned) n._autoPinned = false
+            if (n._dragging) draggingCount++
 
             const vx = n.vx ?? 0
             const vy = n.vy ?? 0
@@ -303,7 +378,8 @@ export default function useGraphSimulation(params: Params) {
               n._idleTicks = 0
             }
 
-            if (!n._autoPinned && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
+            // don't auto-pin nodes that are actively being dragged by the user
+            if (!n._autoPinned && !(n._dragging) && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
               n.vx = 0
               n.vy = 0
               n.fx = n.x ?? null
@@ -315,7 +391,8 @@ export default function useGraphSimulation(params: Params) {
           }
 
           const ratio = currentNodes.length > 0 ? autoPinnedCount / currentNodes.length : 1
-          if (ratio >= NODE_IDLE_RATIO) {
+          // Don't stop the simulation while the user is actively dragging a node
+          if (ratio >= NODE_IDLE_RATIO && draggingCount === 0) {
             try {
               sim.stop()
             } catch {
