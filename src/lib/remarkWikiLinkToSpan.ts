@@ -1,11 +1,12 @@
 /**
  * src/lib/remarkWikiLinkToSpan.ts
- * Responsibility: Default export remarkWikiLinkToSpan
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: remark 플러그인으로서 위키링크 문법을 링크 노드로 변환
+ * 주요 exports: default remarkWikiLinkToSpan
+ * 한글 설명: [[Target|Label]] 형태를 `wikilink:Target` URL을 가진 링크 노드로 변환합니다.
  */
 
-// Minimal remark plugin: transform text tokens like [[Target]] into link nodes
-// with url scheme 'wikilink:Target'. We'll render them as <span class="wikilink">Target</span>.
+// 최소한의 remark 플러그인: [[Target]] 같은 텍스트 토큰을 링크 노드로 변환
+// 'wikilink:Target' URL 스킴을 사용합니다. 우리는 이를 <span class="wikilink">Target</span>으로 렌더링합니다.
 
 import { visitParents } from 'unist-util-visit-parents'
 
@@ -17,7 +18,7 @@ function remarkWikiLinkToSpan() {
       if (!node || typeof node.value !== 'string') return
       if (!node.value.includes('[[')) return
 
-      // Don't process inside existing links
+      // 기존 링크 내부에서는 처리하지 않음
       if (ancestors.some((a) => a && (a.type === 'link' || a.type === 'linkReference'))) {
         return
       }

@@ -1,7 +1,8 @@
 /**
  * src/pages/AboutPage.tsx
- * Responsibility: Default export AboutPage
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: About 페이지 렌더링 (블로그 소개 및 스택 정보)
+ * 주요 export: default AboutPage (React.FC)
+ * 한글 설명: 개인 블로그의 소개와 기술 스택을 표시합니다.
  */
 
 import React from 'react';

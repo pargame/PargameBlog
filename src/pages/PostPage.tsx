@@ -1,7 +1,8 @@
 /**
  * src/pages/PostPage.tsx
- * Responsibility: Default export PostPage
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 개별 포스트 로딩 및 렌더링
+ * 주요 export: default PostPage (React.FC)
+ * 한글 설명: remark-gfm는 런타임에 안전하게 lazy 로드합니다.
  */
 
 import React, { useEffect, useState } from 'react'
@@ -19,14 +20,14 @@ function createSafeWrapper(candidate: unknown): MarkdownPlugin | null {
   if (typeof candidate !== 'function') return null
   const originalFn = candidate as (...a: unknown[]) => unknown
   return function safeAttacher(this: unknown, ...args: unknown[]) {
-    // If `this` is not a unified Processor (no `data`), skip attaching the
-    // plugin to avoid runtime TypeErrors. This means GFM features won't be
-    // enabled for this render, but it prevents the page from crashing.
+    // `this`가 통합 Processor가 아니면 (data 없음), 런타임 TypeErrors를 피하기 위해
+    // 플러그인을 첨부하지 않습니다. 이는 이 렌더링에서 GFM 기능이 활성화되지 않음을 의미하지만,
+    // 페이지를 충돌시키는 것을 방지합니다.
     interface ProcessorLike { data?: unknown }
     const processorLike = this as ProcessorLike
     if (!processorLike || typeof (processorLike.data as unknown) !== 'function') {
-        // silently skip attaching remark-gfm when `this` is not a unified
-        // processor (prevents noisy logs in StrictMode double-invokes).
+        // `this`가 통합 processor가 아닐 때 remark-gfm 첨부를 조용히 건너뜁니다
+        // (StrictMode double-invokes에서 시끄러운 로그를 방지합니다).
         return function () { return function noopTransformer(tree: unknown) { return tree } }
       }
     try {

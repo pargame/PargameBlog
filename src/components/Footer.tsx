@@ -1,7 +1,8 @@
 /**
  * src/components/Footer.tsx
- * Responsibility: Default export memo
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 사이트 푸터 렌더링 (연락처 및 링크)
+ * 주요 export: default memo(Footer) (React.FC)
+ * 한글 설명: 이메일을 런타임에 조합하여 크롤링을 방지합니다.
  */
 
 import { memo, useEffect, useState } from 'react'

@@ -1,7 +1,8 @@
 /**
  * src/pages/HomePage.tsx
- * Responsibility: Default export HomePage
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 홈 페이지 렌더링 (포스트 목록 로드 및 네비게이션)
+ * 주요 export: default HomePage (React.FC)
+ * 한글 설명: 비동기으로 포스트를 로드하여 최근 게시물 목록을 표시합니다.
  */
 
 import React, { useEffect, useState } from 'react';

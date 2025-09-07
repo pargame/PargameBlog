@@ -1,7 +1,8 @@
 /**
  * src/components/CollectionCard.tsx
- * Responsibility: Default export CollectionCard
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 컬렉션 카드 렌더링 (이름과 오픈 핸들러)
+ * 주요 export: default CollectionCard (React.FC<Props>)
+ * 한글 설명: 컬렉션 이름을 클릭하면 그래프 모달을 엽니다.
  */
 
 import React from 'react'

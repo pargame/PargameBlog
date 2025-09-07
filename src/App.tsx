@@ -1,7 +1,8 @@
 /**
  * src/App.tsx
- * Responsibility: Default export App
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 라우터 및 전역 레이아웃(네비게이션, Footer)을 정의하는 루트 컴포넌트
+ * 주요 export: default App (React.FC)
+ * 한글 설명: Vite BASE_URL에 따라 Router basename을 동적으로 계산합니다.
  */
 
 import { Suspense, lazy } from 'react'

@@ -1,7 +1,8 @@
 /**
  * src/lib/date.ts
- * Responsibility: Exports formatPostDate
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 날짜 문자열을 포맷팅하여 표시 형식으로 변환
+ * 주요 exports: formatPostDate(dateStr) -> string
+ * 한글 설명: 날짜를 YYYY-MM-DD 형식으로, 시간이 있으면 · HH:MM을 추가합니다.
  */
 
 export function formatPostDate(dateStr?: string): string {
@@ -15,7 +16,7 @@ export function formatPostDate(dateStr?: string): string {
     const dd = String(d.getDate()).padStart(2, '0')
     const datePart = `${yyyy}-${mm}-${dd}`
 
-    // Detect whether original string contained a time component
+    // 원본 문자열에 시간 구성 요소가 포함되어 있는지 감지합니다.
     const hasTime = /T|:\d{2}/.test(dateStr)
     if (!hasTime) return datePart
 

@@ -1,14 +1,20 @@
 /**
  * src/lib/moduleUtils.ts
- * Responsibility: Default export unwrapModuleDefault
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 동적 import 결과에서 ESM/CJS default를 안전하게 해제하는 유틸
+ * exports: unwrapModuleDefault
+ */
+/**
+ * src/lib/moduleUtils.ts
+ * 책임: 동적 import 결과에서 ESM/CJS default 값을 안전하게 추출하는 유틸
+ * 주요 exports: unwrapModuleDefault
+ * 한글 설명: 모듈이 { default: value } 형태이거나 직접값인 경우 모두 처리합니다.
  */
 
 /**
- * Small helper for dynamic import interop (common patterns when bundling ESM/CJS)
- */
-/**
- * Helper utilities for dealing with dynamic import shapes (ESM default vs CJS)
+ * Unwraps the default export from a dynamic import value for ESM/CJS interop.
+ *
+ * @param mod - Module value returned by dynamic import (ESM or CJS shape)
+ * @returns The unwrapped default value as T, or the original module cast to T
  */
 export function unwrapModuleDefault<T>(mod: unknown): T {
   if (mod == null) return undefined as unknown as T

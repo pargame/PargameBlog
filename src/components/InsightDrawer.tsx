@@ -1,19 +1,20 @@
 /**
  * src/components/InsightDrawer.tsx
- * Responsibility: Default export memo
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 선택된 노드의 문서를 옆드로어로 로드·렌더링
+ * 주요 props: collection, insightId, onWikiLinkClick
+ * 한글 설명: 문서 로드와 렌더링은 lazy import와 Suspense로 안전하게 처리합니다.
  */
 
 import React, { Suspense, memo, useEffect, useRef, useState } from 'react'
 import logger from '../lib/logger'
-// react-markdown's types vary across versions; accept a loose plugin type locally
-// Loose plugin type using unknown to avoid `any` lint rule; cast to expected runtime shape when used.
-// heavy modules will be dynamically imported below
+// react-markdown의 타입은 버전에 따라 다릅니다; 로컬에서 느슨한 플러그인 타입을 허용합니다.
+// `any` 린트 규칙을 피하기 위해 unknown을 사용하는 느슨한 플러그인 타입; 사용 시 예상 런타임 형태로 캐스트합니다.
+// 무거운 모듈은 아래에서 동적으로 임포트됩니다.
 const LazyMarkdown = React.lazy(async () => {
   const mod = await import('react-markdown')
   return { default: mod.default }
 })
-// light util stays static
+// 가벼운 유틸은 정적으로 유지됩니다.
 import remarkWikiLinkToSpan from '../lib/remarkWikiLinkToSpan'
 
 type Doc = { content: string }
@@ -24,7 +25,7 @@ interface InsightDrawerProps {
   onWikiLinkClick: (target: string) => void
 }
 
-// Small local error boundary to prevent the entire modal from going blank
+// 전체 모달이 비워지지 않도록 작은 로컬 에러 바운더리
 class LocalErrorBoundary extends React.Component<{
   children: React.ReactNode
 }, { hasError: boolean; error?: Error }> {
@@ -36,7 +37,7 @@ class LocalErrorBoundary extends React.Component<{
     return { hasError: true }
   }
   componentDidCatch(error: Error) {
-    // route via logger so behavior can be controlled by environment
+    // 환경에 따라 동작을 제어할 수 있도록 로거를 통해 라우팅합니다.
     logger.error('InsightDrawer render error:', error)
   }
   render() {
@@ -58,14 +59,14 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
 }) => {
   const scrollRef = useRef<HTMLDivElement | null>(null)
   const [doc, setDoc] = useState<Doc | null>(null)
-  // No remark-gfm in the drawer to avoid runtime plugin `this` issues;
-  // GFM support remains in the main PostPage which loads remark-gfm safely.
+  // 런타임 플러그인 `this` 문제를 피하기 위해 드로어에 remark-gfm을 넣지 않습니다;
+  // GFM 지원은 remark-gfm을 안전하게 로드하는 메인 PostPage에 남아 있습니다.
   const [knownIds, setKnownIds] = useState<Set<string>>(new Set())
 
   useEffect(() => {
     let mounted = true
   ;(async () => {
-  // load doc lazily
+  // 문서를 lazy하게 로드합니다.
       try {
         const docMod = await import('../lib/doc')
         const found = insightId ? docMod.getDocFromCollection(collection, insightId) : null
@@ -73,14 +74,14 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
       } catch {
         if (mounted) setDoc(null)
       }
-  // Note: intentionally not loading `remark-gfm` here - it can require
-  // a unified processor `this` which may not be available in this lazy
-  // environment and caused blank modal crashes. PostPage handles GFM.
+  // 참고: 의도적으로 여기서 `remark-gfm`을 로드하지 않습니다 - 이는
+  // 이 lazy 환경에서 사용할 수 없을 수 있는 통합 processor `this`를 요구할 수 있으며
+  // 빈 모달 충돌을 일으켰습니다. PostPage가 GFM을 처리합니다.
     })()
     return () => { mounted = false }
   }, [collection, insightId])
 
-  // Load list of available doc ids for this collection to style missing links differently
+  // 누락된 링크를 다르게 스타일링하기 위해 이 컬렉션의 사용 가능한 문서 id 목록을 로드합니다.
   useEffect(() => {
     let mounted = true
     ;(async () => {
@@ -102,7 +103,7 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
     return () => { mounted = false }
   }, [collection])
 
-  // When switching doc, scroll to top of drawer
+  // 문서를 전환할 때 드로어 상단으로 스크롤합니다.
   useEffect(() => {
     if (scrollRef.current) {
       scrollRef.current.scrollTop = 0
@@ -134,7 +135,7 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
     <aside 
       className="insight-drawer open" 
       onClick={(e) => {
-        // Prevent clicks inside the drawer from bubbling to the backdrop
+        // 드로어 내부의 클릭이 백드롭으로 버블링되지 않도록 방지합니다.
         e.stopPropagation()
       }}
     >
@@ -146,7 +147,7 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
             remarkPlugins={[remarkWikiLinkToSpan]}
             components={{
               a: ({ href, children }: { href?: string; children?: React.ReactNode }) => {
-                // Helper to recursively extract plain text from children for heuristic
+                // 휴리스틱을 위한 자식에서 일반 텍스트를 재귀적으로 추출하는 헬퍼
                 const textFromChildren = (node: unknown): string => {
                   if (node == null) return ''
                   if (typeof node === 'string') return node
@@ -157,20 +158,20 @@ const InsightDrawer: React.FC<InsightDrawerProps> = ({
                   return ''
                 }
 
-                // Determine target either from href (wikilink:Target) or from child text
+                // href (wikilink:Target) 또는 자식 텍스트에서 타겟을 결정합니다.
                 let targetFromHref: string | null = null
                 if (href && href.startsWith('wikilink:')) {
                   targetFromHref = href.slice('wikilink:'.length)
                 }
                 const labelText = textFromChildren(children).trim()
 
-                // Accept Unicode letters/numbers as valid wiki token text (allows 한글, etc.)
+                // 유니코드 문자/숫자를 유효한 위키 토큰 텍스트로 허용합니다 (한글 등 허용).
                 const looksLikeWikiToken = (!href || href === '') && !!labelText && /^[\p{L}\p{N}_.-]+$/u.test(labelText)
                 const isWiki = !!targetFromHref || looksLikeWikiToken
                 const target = targetFromHref || labelText
 
                 if (isWiki && target) {
-                  // Determine missing by checking current collection's known ids
+                  // 현재 컬렉션의 알려진 id를 확인하여 누락 여부를 결정합니다.
                   const base = target.split('#')[0].trim()
                   const missing = !knownIds.has(base)
                   return (

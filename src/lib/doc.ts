@@ -1,7 +1,7 @@
 /**
  * src/lib/doc.ts
- * Responsibility: Exports getDocFromCollection
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 단일 문서 로딩 유틸
+ * exports: getDocFromCollection(collection, id) -> { id, title, content } | undefined
  */
 
 // Lightweight helpers to load a single markdown document from a given collection

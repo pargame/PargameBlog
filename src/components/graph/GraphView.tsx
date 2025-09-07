@@ -1,12 +1,8 @@
 /**
  * src/components/graph/GraphView.tsx
- * 책임: 그래프 SVG 래퍼 컴포넌트입니다.
- * - 역할: UI 제어(토글, 리사이즈 등)와 D3 시뮬레이션 훅을 연결합니다.
- * - 입력: GraphData (nodes, links)
- * - 출력: 렌더된 SVG 및 제어 UI
- *
- * 이 파일의 주석은 한글로 작성되어 있으며, 복잡한 내부 로직에는
- * 간단한 설명을 추가하여 개발자 경험을 개선합니다.
+ * 책임: Graph SVG 렌더링 및 GraphControls 연결을 담당하는 UI 컴포넌트
+ * 주요 props: data: GraphData, onNodeClick?, onBackgroundClick?
+ * 한글 설명: D3 시뮬레이션 훅(`useGraphSimulation`)에 DOM refs를 전달합니다.
  */
 import React, { memo, useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'

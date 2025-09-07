@@ -1,18 +1,16 @@
 /**
  * src/lib/graphParser.ts
- * 책임: 마크다운 원본에서 위키 링크를 추출하고 모듈 집합에서 id->title 맵을 생성하는 유틸
- *
- * 계약 (작은 계약으로 설계):
- * - 입력: `src` (문서 본문 문자열) 또는 `modules` (경로->원시 마크다운 문자열 맵)
- * - 출력: `extractWikiLinks`는 대상 id 문자열 배열을 반환
- *          `buildIdTitleMap`는 { idToTitle: Map<string,string>, fileById: Map<string,string> }를 반환
- * - 에러모드: 비어있는 입력, 잘못된 frontmatter 등은 예외를 던지지 않고 안전한 기본값을 반환함
- * - 사용예: const ids = extractWikiLinks(markdownBody)
- *          const { idToTitle } = buildIdTitleMap(modules)
- * - 노트: 링크 문법은 [[Target|Label]] 및 [[Target#Anchor]]를 지원합니다. Anchor/Label은 무시되고 Target id만 추출됩니다.
+ * 책임: 마크다운에서 위키 스타일 링크를 추출하고 id->title 맵을 생성합니다.
+ * 주요 exports: extractWikiLinks, buildIdTitleMap
+ * 한글 설명: Anchor/Label은 무시하며, frontmatter의 title을 우선 사용합니다.
  */
 
-// Extract wiki-style links [[Target|Label]] or [[Target#Anchor]]
+/**
+ * extractWikiLinks
+ * @param src 문서 본문(마크다운 원문)
+ * @returns 추출된 Target id 문자열 배열
+ * 설명: [[Target]], [[Target|Label]], [[Target#Anchor]] 형태에서 Target id만 추출합니다.
+ */
 export function extractWikiLinks(src: string): string[] {
   const out: string[] = []
   const re = /\[\[([^\]]+)\]\]/g
@@ -29,7 +27,12 @@ export function extractWikiLinks(src: string): string[] {
   return out
 }
 
-// Build maps: id -> title, id -> source file path
+/**
+ * buildIdTitleMap
+ * @param modules 파일경로->마크다운원문 맵
+ * @returns { idToTitle: Map<string,string>, fileById: Map<string,string> }
+ * 설명: 각 마크다운 파일의 id(파일명)에서 title(frontmatter 우선)을 추출해 맵을 구성합니다.
+ */
 export function buildIdTitleMap(modules: Record<string, string>) {
   const idToTitle = new Map<string, string>()
   const fileById = new Map<string, string>()

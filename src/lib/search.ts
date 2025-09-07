@@ -1,14 +1,15 @@
 /**
  * src/lib/search.ts
- * Responsibility: Exports searchItems
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 클라이언트 사이드 검색 유틸리티
+ * 주요 exports: searchItems, Item
+ * 한글 설명: 단순한 부분 문자열 기반 스코어링으로 제목/슬러그를 검색합니다.
  */
 
-// Very small fuzzy search utility for client-side title/slug search
+// 클라이언트 사이드 제목/슬러그 검색을 위한 매우 작은 퍼지 검색 유틸리티
 export type Item = { slug: string; title: string }
 
 function score(text: string, query: string): number {
-  // simple case-insensitive substring score, prefer prefix matches
+  // 대소문자를 구분하지 않는 간단한 부분 문자열 스코어링, 접두사 매치를 선호
   const t = text.toLowerCase()
   const q = query.toLowerCase()
   if (!q) return 0

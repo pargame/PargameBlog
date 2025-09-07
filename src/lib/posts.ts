@@ -1,7 +1,8 @@
 /**
  * src/lib/posts.ts
- * Responsibility: Exports getAllPosts
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 블로그 마크다운 포스트를 동적으로 로드하여 Post 객체 배열로 변환합니다.
+ * 주요 exports: loadAllPosts, getPostBySlugAsync
+ * 한글 설명: DEV/Prod에서 서로 다른 로드 전략을 사용합니다.
  */
 
 import type { Post, PostMeta } from '../types'
@@ -9,25 +10,23 @@ import { parseFrontmatter } from './frontmatter'
 import logger from './logger'
 import unwrapModuleDefault from './moduleUtils'
 
-// Use dynamic import to avoid bundling all posts into the app's initial chunks.
-// `postsGlob` returns functions that when called import the raw markdown content as string.
-// Support legacy `src/posts/**` and multiple content locations:
-// - /content/posts/** (lowercase)
-// - /content/Postings/** (user-renamed folder, case variants)
+// 앱의 초기 청크에 모든 포스트를 번들링하지 않도록 동적 임포트를 사용합니다.
+// `postsGlob`은 호출 시 원시 마크다운 콘텐츠를 문자열로 임포트하는 함수를 반환합니다.
+// 여러 콘텐츠 위치를 지원합니다:
+// - /content/posts/** (소문자)
+// - /content/Postings/** (사용자가 이름을 바꾼 폴더, 대소문자 변형)
 const postsGlob = () => {
-  const rel = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
   const absLower = import.meta.glob('/content/posts/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
   const absUpper = import.meta.glob('/content/Postings/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
-  return { ...rel, ...absLower, ...absUpper }
+  return { ...absLower, ...absUpper }
 }
 
-let cached: Post[] | null = null
 let asyncCache: Post[] | null = null
 
 function extractSlugFromPath(path: string): string {
   const fileName = path.split('/').pop() || ''
   const base = fileName.replace(/\.md$/, '')
-  // Remove date prefix (YYYY-MM-DD-) if present
+  // 날짜 접두사(YYYY-MM-DD-)가 있으면 제거합니다.
   return base.replace(/^\d{4}-\d{2}-\d{2}-/, '')
 }
 
@@ -55,7 +54,8 @@ function computePostsFromModules(modules: Record<string, string>): Post[] {
         }
         seenSlugs.add(slug)
 
-        const { data, content } = parseFrontmatter(rawContent)
+  // 왜: frontmatter에서 title/date를 추출하여 PostMeta를 구성. 렌더링/정렬에 사용됨
+  const { data, content } = parseFrontmatter(rawContent)
         const meta: PostMeta = {
           title: data.title || slug,
           date: data.date || '1970-01-01',
@@ -83,20 +83,6 @@ function computePostsFromModules(modules: Record<string, string>): Post[] {
 }
 
 async function loadAllPosts(): Promise<Post[]> {
-  if (import.meta.env.DEV) {
-    // In dev, fall back to synchronous behaviour for fast rebuilds
-    return computePostsFromModules((await (async function devAll(){
-      const g = postsGlob()
-      const out: Record<string,string> = {}
-      const entries = Object.entries(g)
-      for (const [path, loader] of entries) {
-    const m = await loader()
-    const val = unwrapModuleDefault<string | { default?: string }>(m)
-    out[path] = typeof val === 'string' ? val : (val?.default ?? '')
-      }
-      return out
-    })()))
-  }
   if (asyncCache) return asyncCache
 
   const loaders = postsGlob()
@@ -116,73 +102,17 @@ async function loadAllPosts(): Promise<Post[]> {
   return asyncCache
 }
 
-/**
- * Backwards-compatible synchronous API kept for callers that expect immediate data.
- * This surface exists for legacy compatibility; prefer the async `loadAllPosts()` in
- * new code to avoid assumptions about synchronous I/O and build-time eager imports.
- *
- * Migration notes:
- * - Replace callers of `getAllPosts()` with `await loadAllPosts()` where possible.
- * - If synchronous access is strictly required, ensure the call happens after the
- *   build/load phase (DEV builds may behave differently).
- *
- * @deprecated Use `loadAllPosts()` (async) instead. Example migration:
- * // OLD: const posts = getAllPosts()
- * // NEW: const posts = await loadAllPosts()
- *
- * This sync API is maintained for compatibility and may be removed once
- * consumers are migrated. Relying on this in production bundles can cause
- * unexpected empty caches since it doesn't perform async imports.
- */
-export function getAllPosts(): Post[] {
-  if (import.meta.env.DEV) {
-    // In dev, computing posts eagerly is acceptable for fast iteration.
-      if (!cached) {
-      // attempt to eagerly import via temporary eager globs (legacy + content variants)
-      const eagerRel = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
-      const eagerAbsLower = import.meta.glob('/content/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
-      const eagerAbsUpper = import.meta.glob('/content/Postings/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
-      const eager = { ...eagerRel, ...eagerAbsLower, ...eagerAbsUpper }
-      cached = computePostsFromModules(eager)
-    }
-    return cached
-  }
-
-  // In production build/runtime, keep previous cached behavior
-  if (!cached) {
-    // Try to synchronously compute from an empty set — this keeps API stable.
-    cached = []
-  }
-  return cached
-}
-
 export { loadAllPosts }
 
 /**
- * @deprecated Use `getPostBySlugAsync(slug)` instead to avoid relying on the
- * synchronous legacy cache. Example:
- * // OLD: const post = getPostBySlug(slug)
- * // NEW: const post = await getPostBySlugAsync(slug)
- */
-export function getPostBySlug(slug: string): Post | undefined {
-  // Runtime deprecation warning to encourage migration to async API
-  if (import.meta.env.DEV) {
-    logger.warn('[posts] getPostBySlug is deprecated; prefer getPostBySlugAsync')
-  }
-  return getAllPosts().find(p => p.slug === slug)
-}
-
-/**
- * Async helper that should be used by new code to avoid relying on the
- * synchronous legacy surface `getAllPosts()`.
- *
- * Example:
- *   const post = await getPostBySlugAsync(slug)
+ * getPostBySlugAsync
+ * @param slug 포스트의 slug
+ * @returns Promise<Post | undefined> - 비동기 방식으로 포스트를 로드합니다.
  */
 export async function getPostBySlugAsync(slug: string): Promise<Post | undefined> {
   const posts = await loadAllPosts()
   return posts.find(p => p.slug === slug)
 }
 
-// Debug helper: which md files were matched
-// (internal) debug helper was removed in production
+// 디버그 헬퍼: 어떤 md 파일이 매칭되었는지
+// (내부) 디버그 헬퍼는 프로덕션에서 제거되었습니다.

@@ -6,6 +6,12 @@
  *
  * 주석 규칙: 작은 재사용 컴포넌트는 prop 의미를 상단에 명확히 적습니다.
  */
+/**
+ * src/components/graph/GraphControls.tsx
+ * 책임: GraphView의 토글 UI(예: missing 노드 표시) 제공
+ * props: showMissing (boolean), onToggleShowMissing()
+ * 한글 설명: 간단한 UI 컴포넌트로 외부 상태를 제어합니다.
+ */
 import React from 'react'
 import './GraphControls.css'
 

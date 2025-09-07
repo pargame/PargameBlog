@@ -1,6 +1,8 @@
 /**
  * src/hooks/useGraphSimulation.ts
- * 책임: D3 기반 force-simulation과 관련된 모든 DOM/시뮬레이션 로직을 캡슐화한다.
+ * 책임: D3 force-simulation과 DOM 바인딩을 캡슐화하는 React 훅
+ * 주요 exports: default (useGraphSimulation)
+ * 한글 설명: 시뮬레이션 초기화, tick 처리, 드래그/줌/호버를 담당합니다.
  */
 import { useEffect } from 'react'
 import * as d3 from 'd3'
@@ -55,6 +57,12 @@ type Params = {
  * 파라미터는 `Params` 타입 참조. 일부 refs는 React 쪽에서 DOM 선택자를 참조할
  * 수 있도록 전달됩니다.
  */
+/**
+ * useGraphSimulation 훅
+ * @param params 훅에 전달되는 파라미터 객체 (svgRef, data, refs 등)
+ * @returns void - 사이드 이펙트로 SVG/시뮬레이션을 초기화합니다.
+ * 설명: 컴포넌트에서 전달한 refs를 사용해 d3 시뮬레이션과 DOM을 관리합니다.
+ */
 export default function useGraphSimulation(params: Params) {
   const {
     svgRef,
@@ -95,12 +103,14 @@ export default function useGraphSimulation(params: Params) {
       try {
         if (simulationStoppedRef) simulationStoppedRef.current = false
       } catch (err) {
-        // best-effort: if writing to the external ref fails, log for debug
+        // 최선의 노력: 외부 ref 쓰기가 실패하면 디버그를 위해 로그
         // (not an operational error)
         // eslint-disable-next-line no-console
         console.debug('useGraphSimulation: failed to write simulationStoppedRef', err)
       }
       try {
+        // 왜: 사용자가 인터랙션을 했을 때 시뮬레이션을 "깨우기" 위해 alpha를 강제로 올립니다.
+        // 이로써 노드가 재정렬되고 자연스러운 애니메이션이 발생합니다.
         sim.alpha(1)
         sim.alphaTarget(target)
         sim.restart()
@@ -108,16 +118,18 @@ export default function useGraphSimulation(params: Params) {
           window.clearTimeout(kickTimerRef.current)
           kickTimerRef.current = null
         }
-        kickTimerRef.current = window.setTimeout(() => {
-          try {
-            sim.alphaTarget(relaxTo)
-          } catch {
-            // ignore
-          }
-          kickTimerRef.current = null
-        }, relaxAfter)
+          // 왜: 일정 시간이 지나면 alphaTarget을 낮춰 시뮬레이션을 점진적으로 안정화합니다.
+          // 이렇게 하면 상호작용 후에도 무한히 움직이지 않도록 제어됩니다.
+          kickTimerRef.current = window.setTimeout(() => {
+            try {
+              sim.alphaTarget(relaxTo)
+            } catch {
+              // 무시
+            }
+            kickTimerRef.current = null
+          }, relaxAfter)
       } catch {
-        // ignore
+        // 무시
       }
     }
 
@@ -189,7 +201,7 @@ export default function useGraphSimulation(params: Params) {
       zoomRef.current = zoom
       svg.call(zoom.transform, d3.zoomIdentity)
     } catch {
-      // ignore
+      // 무시
     }
 
     type D3Link = d3.SimulationLinkDatum<NodeDatum>
@@ -292,7 +304,7 @@ export default function useGraphSimulation(params: Params) {
         try {
           if (!simulationStoppedRef || !simulationStoppedRef.current) return
         } catch (err) {
-          // non-fatal: DOM may be unavailable in test environments
+          // 치명적이지 않음: 테스트 환경에서 DOM을 사용할 수 없을 수 있음
           // eslint-disable-next-line no-console
           console.debug('useGraphSimulation: hover handler early exit', err)
           return
@@ -335,7 +347,7 @@ export default function useGraphSimulation(params: Params) {
         linksAll.classed('faded-link', false)
       })
     } catch {
-      // ignore in non-DOM environments
+      // DOM이 아닌 환경에서는 무시
     }
 
   // 레이블 바인딩: 노드 레이블을 별도 그룹에 추가하여 노드/링크보다 위에
@@ -358,7 +370,7 @@ export default function useGraphSimulation(params: Params) {
     )
     labelSelRef.current = labelGroup.selectAll('text')
 
-    // Precompute helpers for visibility control (shared for both branches)
+    // 가시성 제어를 위한 헬퍼 미리 계산 (두 브랜치에서 공유)
     const missingSet = getMissingSet(nodes as GraphNode[])
     const updateVisibility = (show: boolean) => {
       nodeSelRef.current?.style('display', (d: NodeDatum) => (!show && d.missing ? 'none' : null))
@@ -421,7 +433,7 @@ export default function useGraphSimulation(params: Params) {
       const NODE_IDLE_RATIO = 0.9
       const IDLE_TICKS_TO_STOP = 5
 
-  // missingSet already computed above
+  // missingSet은 위에서 이미 계산됨
 
       simulationRef.current.on('tick', () => {
         if (!frameRequested) {
@@ -429,64 +441,68 @@ export default function useGraphSimulation(params: Params) {
           window.requestAnimationFrame(renderPositions)
         }
 
-        try {
-          const sim = simulationRef.current
-          if (!sim) return
-          const currentNodes = sim.nodes() as NodeDatum[]
+          try {
+            const sim = simulationRef.current
+            if (!sim) return
+            const currentNodes = sim.nodes() as NodeDatum[]
 
-          let autoPinnedCount = 0
-          let draggingCount = 0
-          for (let i = 0; i < currentNodes.length; i++) {
-            const n = currentNodes[i]
-            if (!n._idleTicks) n._idleTicks = 0
-            if (!n._autoPinned) n._autoPinned = false
-            if (n._dragging) draggingCount++
+            let autoPinnedCount = 0
+            let draggingCount = 0
+            for (let i = 0; i < currentNodes.length; i++) {
+              const n = currentNodes[i]
+              // 왜: idle tick 카운터로 노드의 속도 변화가 충분히 작아졌는지 판단합니다.
+              if (!n._idleTicks) n._idleTicks = 0
+              if (!n._autoPinned) n._autoPinned = false
+              if (n._dragging) draggingCount++
 
-            const vx = n.vx ?? 0
-            const vy = n.vy ?? 0
-            const s = Math.sqrt(vx * vx + vy * vy)
-            if (s < NODE_SPEED_THRESHOLD) {
-              n._idleTicks = (n._idleTicks ?? 0) + 1
-            } else {
-              n._idleTicks = 0
+              const vx = n.vx ?? 0
+              const vy = n.vy ?? 0
+              const s = Math.sqrt(vx * vx + vy * vy)
+              if (s < NODE_SPEED_THRESHOLD) {
+                n._idleTicks = (n._idleTicks ?? 0) + 1
+              } else {
+                n._idleTicks = 0
+              }
+
+              // 왜: 일정 기간(Idle ticks) 동안 충분히 느려진 노드를 고정하여
+              // 시뮬레이션이 계속 흔들리지 않도록 자동 고정을 수행합니다.
+              if (!n._autoPinned && !(n._dragging) && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
+                n.vx = 0
+                n.vy = 0
+                n.fx = n.x ?? null
+                n.fy = n.y ?? null
+                n._autoPinned = true
+              }
+
+              if (n._autoPinned) autoPinnedCount++
             }
 
-            if (!n._autoPinned && !(n._dragging) && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
-              n.vx = 0
-              n.vy = 0
-              n.fx = n.x ?? null
-              n.fy = n.y ?? null
-              n._autoPinned = true
-            }
-
-            if (n._autoPinned) autoPinnedCount++
-          }
-
-          const ratio = currentNodes.length > 0 ? autoPinnedCount / currentNodes.length : 1
-          if (ratio >= NODE_IDLE_RATIO && draggingCount === 0) {
-            try {
-              sim.stop()
+            const ratio = currentNodes.length > 0 ? autoPinnedCount / currentNodes.length : 1
+            // 왜: 대부분의 노드가 auto-pinned 상태이면 시뮬레이션을 정지시켜 CPU 사용을 절감합니다.
+            if (ratio >= NODE_IDLE_RATIO && draggingCount === 0) {
               try {
-                if (simulationStoppedRef) simulationStoppedRef.current = true
+                sim.stop()
+                try {
+                  if (simulationStoppedRef) simulationStoppedRef.current = true
                 } catch (innerErr) {
-                  // best-effort write; log and continue
+                  // 최선의 노력 쓰기; 로그하고 계속
                   // eslint-disable-next-line no-console
                   console.debug('useGraphSimulation: failed to mark stopped', innerErr)
                 }
-            } catch (err) {
-                // ignore rendering error, but log for debugging
+              } catch (err) {
+                // 렌더링 오류 무시, 하지만 디버깅을 위해 로그
                 // eslint-disable-next-line no-console
                 console.debug('useGraphSimulation: error stopping simulation', err)
               }
-            for (let i = 0; i < currentNodes.length; i++) {
-              currentNodes[i]._idleTicks = 0
+              for (let i = 0; i < currentNodes.length; i++) {
+                currentNodes[i]._idleTicks = 0
+              }
             }
+          } catch (err) {
+            // 틱 루프 오류 무시, 하지만 디버깅을 돕기 위해 로그
+            // eslint-disable-next-line no-console
+            console.debug('useGraphSimulation: tick handler error', err)
           }
-        } catch (err) {
-          // ignore tick loop error, but log to assist debugging
-          // eslint-disable-next-line no-console
-          console.debug('useGraphSimulation: tick handler error', err)
-        }
       })
 
       kickSimulation(simulationRef.current)

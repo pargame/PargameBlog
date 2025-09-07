@@ -1,7 +1,8 @@
 /**
  * src/lib/contentIndex.ts
- * Responsibility: contentIndex
- * Auto-generated header: add more descriptive responsibility by hand.
+ * 책임: 콘텐츠 컬렉션에서 문서 목록/메타를 추출하는 유틸
+ * 주요 exports: getContentItemsForCollectionAsync
+ * 한글 설명: 파일 경로 기반으로 제목/슬러그를 동적으로 수집합니다.
  */
 
 import type { Item } from './search'
@@ -13,7 +14,7 @@ function extractNameFromPath(path: string) {
   return file.replace(/\.md$/, '')
 }
 
-// Async loader: dynamically import only the requested collection's markdown files.
+// 비동기 로더: 요청된 컬렉션의 마크다운 파일만 동적으로 임포트합니다.
 export async function getContentItemsForCollectionAsync(collection: string): Promise<Item[]> {
   const rel = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
   const abs = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
@@ -47,5 +48,5 @@ export async function getContentItemsForCollectionAsync(collection: string): Pro
   return items
 }
 
-// Note: the old synchronous API was intentionally removed to avoid eager bundling.
-// Use getContentItemsForCollectionAsync(collection) instead which dynamically imports content.
+// 참고: 오래된 동기 API는 eager bundling을 피하기 위해 의도적으로 제거되었습니다.
+// 대신 getContentItemsForCollectionAsync(collection)을 사용하세요. 이는 콘텐츠를 동적으로 임포트합니다.

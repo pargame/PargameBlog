@@ -1,5 +1,5 @@
 {
-  "scanned": 32,
+  "scanned": 33,
   "used": [
     "/Users/pargamer/repos/PargameBlog/src/main.tsx",
     "/Users/pargamer/repos/PargameBlog/src/App.tsx",
@@ -10,6 +10,7 @@
     "/Users/pargamer/repos/PargameBlog/src/lib/doc.ts",
     "/Users/pargamer/repos/PargameBlog/src/lib/frontmatter.ts",
     "/Users/pargamer/repos/PargameBlog/src/lib/graph.ts",
+    "/Users/pargamer/repos/PargameBlog/src/lib/graphParser.ts",
     "/Users/pargamer/repos/PargameBlog/src/lib/graphUtils.ts",
     "/Users/pargamer/repos/PargameBlog/src/lib/logger.ts",
     "/Users/pargamer/repos/PargameBlog/src/lib/markdownToHtml.ts",
@@ -30,11 +31,11 @@
     "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphView.tsx",
     "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphControls.tsx",
     "/Users/pargamer/repos/PargameBlog/src/hooks/useGraphSimulation.ts",
-  "/Users/pargamer/repos/PargameBlog/src/hooks/useGraphSimulation.ts"
+    "/Users/pargamer/repos/PargameBlog/src/components/graph/useGraphSimulation.ts"
   ],
   "unused": [
-  "/Users/pargamer/repos/PargameBlog/eslint.config.js",
-  "/Users/pargamer/repos/PargameBlog/src/vite-env.d.ts",
-  "/Users/pargamer/repos/PargameBlog/vite.config.js"
+    "/Users/pargamer/repos/PargameBlog/eslint.config.js",
+    "/Users/pargamer/repos/PargameBlog/src/vite-env.d.ts",
+    "/Users/pargamer/repos/PargameBlog/vite.config.js"
   ]
 }

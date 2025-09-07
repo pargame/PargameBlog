@@ -1,5 +1,5 @@
-"#!/usr/bin/env node"
-"use strict;"
+#!/usr/bin/env node
+"use strict";
 
 /*
   scripts/create_missing_docs.cjs
@@ -13,22 +13,6 @@
     node scripts/create_missing_docs.cjs --dry-run
     node scripts/create_missing_docs.cjs -c Unreal
     node scripts/create_missing_docs.cjs
-*/
-"use strict";
-
-/*
-  scripts/create_missing_docs.cjs
-
-  Node(CommonJS) port of create_missing_docs.py. Scans src/content/* for
-  wikilinks like [[Target]] and creates missing Target.md files in the same
-  collection folder. Conservative: only creates files in the same collection
-  where the link was found.
-
-  Usage:
-    node scripts/create_missing_docs.cjs --dry-run
-    node scripts/create_missing_docs.cjs -c Unreal
-    node scripts/create_missing_docs.cjs
-
 */
 
 const fs = require('fs');
@@ -88,7 +72,7 @@ function parseArgs(argv) {
     const a = argv[i];
     if (a === '--dry-run') res.dryRun = true;
     else if (a === '-c' || a === '--collection') {
-      res.collection = argv[i + 1];
+      res.collection = argv[++i];
       i++;
     } else if (a === '-h' || a === '--help') {
       usage();
