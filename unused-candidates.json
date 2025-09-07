@@ -30,11 +30,11 @@
     "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphView.tsx",
     "/Users/pargamer/repos/PargameBlog/src/components/graph/GraphControls.tsx",
     "/Users/pargamer/repos/PargameBlog/src/hooks/useGraphSimulation.ts",
-    "/Users/pargamer/repos/PargameBlog/src/components/graph/useGraphSimulation.ts"
+  "/Users/pargamer/repos/PargameBlog/src/hooks/useGraphSimulation.ts"
   ],
   "unused": [
-    "/Users/pargamer/repos/PargameBlog/eslint.config.js",
-    "/Users/pargamer/repos/PargameBlog/src/vite-env.d.ts",
-    "/Users/pargamer/repos/PargameBlog/vite.config.js"
+  "/Users/pargamer/repos/PargameBlog/eslint.config.js",
+  "/Users/pargamer/repos/PargameBlog/src/vite-env.d.ts",
+  "/Users/pargamer/repos/PargameBlog/vite.config.js"
   ]
 }

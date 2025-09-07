@@ -1,11 +1,12 @@
 /**
  * src/components/graph/GraphView.tsx
- * 책임: 그래프 SVG 래퍼 컴포넌트. UI 제어(토글, 리사이즈 등)와 D3 시뮬레이션 훅을 연결한다.
+ * 책임: 그래프 SVG 래퍼 컴포넌트입니다.
+ * - 역할: UI 제어(토글, 리사이즈 등)와 D3 시뮬레이션 훅을 연결합니다.
  * - 입력: GraphData (nodes, links)
  * - 출력: 렌더된 SVG 및 제어 UI
  *
- * 주석 규칙: 파일 상단에 책임(한 문장), 주요 props 타입/의미를 적고,
- * 컴포넌트 내부 복잡한 로직에는 짧은 설명을 추가합니다.
+ * 이 파일의 주석은 한글로 작성되어 있으며, 복잡한 내부 로직에는
+ * 간단한 설명을 추가하여 개발자 경험을 개선합니다.
  */
 import React, { memo, useEffect, useRef, useState } from 'react'
 import * as d3 from 'd3'
@@ -44,6 +45,7 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
   const kickTimerRef = useRef<number | null>(null)
   const zoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null)
   const simulationRef = useRef<d3.Simulation<NodeDatum, LinkDatum> | null>(null)
+  const simulationStoppedRef = useRef<boolean | null>(null)
   const nodeSelRef = useRef<d3.Selection<SVGCircleElement, NodeDatum, SVGGElement, unknown> | null>(null)
   const linkSelRef = useRef<d3.Selection<SVGLineElement, LinkDatum, SVGGElement, unknown> | null>(null)
   const labelSelRef = useRef<d3.Selection<SVGTextElement, NodeDatum, SVGGElement, unknown> | null>(null)
@@ -78,10 +80,9 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
 
   useGraphSimulation({
     svgRef,
-    wrapRef,
     dims,
-    width,
-    height,
+  width,
+  height,
     data: { nodes: data.nodes, links: data.links },
     onNodeClick,
     onBackgroundClick,
@@ -93,7 +94,9 @@ const GraphView: React.FC<Props> = ({ data, width = 800, height = 520, onNodeCli
     linkSelRef,
     labelSelRef,
     showMissingRef,
+  simulationStoppedRef,
   })
+  
 
   useEffect(() => {
     showMissingRef.current = showMissing

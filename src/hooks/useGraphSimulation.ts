@@ -1,22 +1,6 @@
 /**
  * src/hooks/useGraphSimulation.ts
  * 책임: D3 기반 force-simulation과 관련된 모든 DOM/시뮬레이션 로직을 캡슐화한다.
- * - SVG 및 그룹(gRoot) 초기화(배경 rect, 줌 레이어)
- * - 링크/노드/레이블 바인딩(enter/update/exit)
- * - d3.forceSimulation 생성/재사용, tick 처리 및 자동 정지 로직
- * - 드래그, 줌, 클릭 이벤트 처리
- *
- * 훅은 React 컴포넌트가 렌더링에만 집중할 수 있게 해주며,
- * 시뮬레이션 상태는 외부 ref(simulationRef 등)를 통해 전달/유지된다.
- */
-/**
- * 계약 (간단한 계약):
- * - 입력(Params): 여러 React ref와 데이터 객체(nodes, links)를 받음. (자세한 타입은 파일 내 `Params` 참조)
- * - 출력: 부수효과로 SVG DOM을 수정하고 simulationRef/selRef들을 설정함.
- * - 라이프사이클: 훅은 내부적으로 cleanup을 제공하여 컴포넌트 언마운트 시 시뮬레이션을 중지하고 참조를 해제합니다.
- * - 에지케이스: 비어 있는 노드/링크, missing 노드 처리, 시뮬레이션 재사용(존재 시 업데이트) 지원.
- * - 사용예: useGraphSimulation({ svgRef, wrapRef, dims, width, height, data, ...refs })
- * - 테스트 팁: DOM을 실제로 생성하지 않는 환경에서는 ref들에 더미 엘리먼트를 할당하여 초기화/정리 흐름을 검증하세요.
  */
 import { useEffect } from 'react'
 import * as d3 from 'd3'
@@ -32,16 +16,15 @@ type NodeDatum =
     vy?: number
     fx?: number | null
     fy?: number | null
-    // 내부 시뮬레이션 상태: 렌더 루프에서 idle/pinned 판단에 사용
     _idleTicks?: number
     _autoPinned?: boolean
-  _dragging?: boolean
+    _dragging?: boolean
   }
+
 type LinkDatum = { source: string | NodeDatum; target: string | NodeDatum }
 
 type Params = {
   svgRef: React.MutableRefObject<SVGSVGElement | null>
-  wrapRef: React.MutableRefObject<HTMLDivElement | null>
   dims: { w: number; h: number }
   width: number
   height: number
@@ -56,8 +39,22 @@ type Params = {
   linkSelRef: React.MutableRefObject<d3.Selection<SVGLineElement, LinkDatum, SVGGElement, unknown> | null>
   labelSelRef: React.MutableRefObject<d3.Selection<SVGTextElement, NodeDatum, SVGGElement, unknown> | null>
   showMissingRef: React.MutableRefObject<boolean>
+  simulationStoppedRef?: React.MutableRefObject<boolean | null>
 }
 
+/**
+ * 훅: useGraphSimulation
+ * - 그래프에 대한 D3 force-simulation 생명주기와 DOM 바인딩을 캡슐화합니다.
+ * - 주요 책임:
+ *   1) SVG 레이어 초기화(배경 rect, 줌 레이어)
+ *   2) 링크/노드/레이블 선택자 바인딩 및 ref 유지
+ *   3) d3.forceSimulation 생성 혹은 재사용 및 tick/render 루프 관리
+ *   4) 노드가 안정화되면 자동으로 고정(auto-pinning)하여 시뮬레이션 정지
+ *   5) 드래그/줌/호버 핸들러 연결 (호버-언더라이팅은 시뮬레이션 정지 시만 동작)
+ *
+ * 파라미터는 `Params` 타입 참조. 일부 refs는 React 쪽에서 DOM 선택자를 참조할
+ * 수 있도록 전달됩니다.
+ */
 export default function useGraphSimulation(params: Params) {
   const {
     svgRef,
@@ -75,19 +72,14 @@ export default function useGraphSimulation(params: Params) {
     linkSelRef,
     labelSelRef,
     showMissingRef,
+    simulationStoppedRef,
   } = params
 
-  // Effect: DOM 바인딩, 시뮬레이션 생성/업데이트, 이벤트 바인딩 등은 아래 useEffect에서 처리한다.
   useEffect(() => {
     const svg = d3.select(svgRef.current!)
     const W = dims.w || width
     const H = dims.h || height
 
-    /**
-     * Helper: Convert a DOM pointer event (or D3 drag event.sourceEvent) into
-     * graph-space coordinates (accounting for current zoom transform).
-     * Returns [x, y] in graph coordinate space.
-     */
     const pointerToGraphCoords = (ev: Event | d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>) => {
       const se = (ev as d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>).sourceEvent as Event | undefined
       const source = se ?? (ev as Event)
@@ -96,8 +88,18 @@ export default function useGraphSimulation(params: Params) {
       return [(pt[0] - t.x) / t.k, (pt[1] - t.y) / t.k]
     }
 
-    const kickSimulation = (sim: d3.Simulation<NodeDatum, LinkDatum> | null, target = 0.3, relaxTo = 0.05, relaxAfter = 1200) => {
+  // 시뮬레이션을 재가동하거나 가열(유도)합니다. 기존 타이머를 지우고
+  // 일정 시간이 지나면 alphaTarget을 완화합니다.
+  const kickSimulation = (sim: d3.Simulation<NodeDatum, LinkDatum> | null, target = 0.3, relaxTo = 0.05, relaxAfter = 1200) => {
       if (!sim) return
+      try {
+        if (simulationStoppedRef) simulationStoppedRef.current = false
+      } catch (err) {
+        // best-effort: if writing to the external ref fails, log for debug
+        // (not an operational error)
+        // eslint-disable-next-line no-console
+        console.debug('useGraphSimulation: failed to write simulationStoppedRef', err)
+      }
       try {
         sim.alpha(1)
         sim.alphaTarget(target)
@@ -119,7 +121,6 @@ export default function useGraphSimulation(params: Params) {
       }
     }
 
-    // Ensure root group and background exist
     let gRoot = svg.select<SVGGElement>('g.zoom-layer')
     if (gRoot.empty()) {
       svg.selectAll('*').remove()
@@ -148,13 +149,10 @@ export default function useGraphSimulation(params: Params) {
       gRoot = svg.append('g').attr('class', 'zoom-layer').style('opacity', 1)
     }
 
-    // link color (unused variable removed)
-
     const nodes: NodeDatum[] = data.nodes as NodeDatum[]
     const rawLinks: RawLink[] = data.links as RawLink[]
     const links: LinkDatum[] = mapLinksToNodes(nodes as GraphNode[], rawLinks) as LinkDatum[]
 
-    // Groups: ensure groups exist (don't use `select(...) || append(...)` because select returns a Selection even when empty)
     let linkGroup = gRoot.select<SVGGElement>('g.links')
     if (linkGroup.empty()) linkGroup = gRoot.append('g').attr('class', 'links')
     let nodeGroup = gRoot.select<SVGGElement>('g.nodes')
@@ -162,16 +160,12 @@ export default function useGraphSimulation(params: Params) {
     let labelGroup = gRoot.select<SVGGElement>('g.labels')
     if (labelGroup.empty()) labelGroup = gRoot.append('g').attr('class', 'labels')
 
-    // Initialize zoom/pan behavior and bind to the SVG. This enables
-    // background drag-to-pan. Wrapped in try/catch so non-DOM test
-    // environments won't blow up.
+  // 줌 동작을 초기화하고 svg에 연결합니다. 변환은 `g.zoom-layer`에 적용됩니다.
     try {
       const zoom = d3
         .zoom<SVGSVGElement, unknown>()
         .scaleExtent([0.2, 4])
         .filter((e: unknown) => {
-          // Filter to allow wheel and left-button mousedown interactions,
-          // and ignore other pointer types we don't want to trigger zoom.
           const ev = e as Event & { type?: string; button?: number }
           const t = ev && ev.type
           if (t === 'wheel') return true
@@ -179,14 +173,10 @@ export default function useGraphSimulation(params: Params) {
           return t === 'mousemove' || t === 'mouseup'
         })
         .on('zoom', (ev: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-          // Apply the current transform to the root group.
           const tr = ev.transform
           gRoot.attr('transform', `translate(${tr.x},${tr.y}) scale(${tr.k})`)
         })
         .on('start', (ev: d3.D3ZoomEvent<SVGSVGElement, unknown>) => {
-          // If the user initiated the zoom on the background rect or svg,
-          // treat it as a background interaction and propagate the click
-          // callback.
           const se = ev.sourceEvent as Event | undefined
           if (!se || !(se.target instanceof HTMLElement)) return
           const target = se.target as HTMLElement
@@ -194,21 +184,18 @@ export default function useGraphSimulation(params: Params) {
           if (isBg) onBackgroundClick?.()
         })
 
-      // disable default dblclick zoom and attach
       svg.on('dblclick.zoom', null)
       svg.call(zoom)
       zoomRef.current = zoom
       svg.call(zoom.transform, d3.zoomIdentity)
     } catch {
-      // non-fatal: if zoom fails (e.g. during SSR-less tests), continue without it
+      // ignore
     }
 
-    // Bind links with join (enter/update/exit) using simulation link objects when available
     type D3Link = d3.SimulationLinkDatum<NodeDatum>
     let linkDataForBind: D3Link[] | LinkDatum[] = links
     const existingLinkForce = simulationRef.current ? (simulationRef.current.force('link') as d3.ForceLink<NodeDatum, LinkDatum> | null) : null
     if (existingLinkForce && typeof existingLinkForce.links === 'function') {
-      // Use the simulation's internal link objects so their source/target will be updated by the sim
       linkDataForBind = (existingLinkForce.links() as D3Link[])
     }
 
@@ -224,7 +211,6 @@ export default function useGraphSimulation(params: Params) {
     )
     linkSelRef.current = linkGroup.selectAll('line')
 
-    // Bind nodes
     const nodeSel = nodeGroup.selectAll<SVGCircleElement, NodeDatum>('circle').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
     nodeSel.join(
       enter =>
@@ -251,10 +237,7 @@ export default function useGraphSimulation(params: Params) {
                     ;(se as Event).stopPropagation()
                   }
                   if (!event.active) kickSimulation(simulationRef.current, 0.3)
-                  // mark dragging state so auto-pinning logic ignores this node
                   d._dragging = true
-                  // map pointer to graph coordinates considering current zoom transform
-                  // Map the pointer (or sourceEvent) into graph coordinates.
                   try {
                     const [gx, gy] = pointerToGraphCoords(event as d3.D3DragEvent<SVGCircleElement, NodeDatum, unknown>)
                     d.fx = gx
@@ -275,7 +258,6 @@ export default function useGraphSimulation(params: Params) {
                   }
                 })
                 .on('end', (event, d) => {
-                  // clear dragging flag
                   d._dragging = false
                   if (!event.active && simulationRef.current) simulationRef.current.alphaTarget(0)
                   d.fx = null
@@ -288,16 +270,94 @@ export default function useGraphSimulation(params: Params) {
     )
     nodeSelRef.current = nodeGroup.selectAll('circle')
 
-    // Bind labels
-    const labelSel = labelGroup.selectAll<SVGTextElement, NodeDatum>('text').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
+  // 호버 핸들러: 시뮬레이션이 정지된 경우에만 언더라이팅을 적용합니다.
+  // (비 DOM 환경에서는 안전하게 무시됩니다.)
+    try {
+      const nodesAll = nodeGroup.selectAll<SVGCircleElement, NodeDatum>('circle')
+      const linksAll = linkGroup.selectAll<SVGLineElement, LinkDatum>('line')
+      const labelsAll = labelGroup.selectAll<SVGTextElement, NodeDatum>('text')
+
+      const neighborMap = new Map<string, Set<string>>()
+      for (let i = 0; i < links.length; i++) {
+        const l = links[i]
+        const s = typeof l.source === 'string' ? l.source : (l.source as NodeDatum).id
+        const t = typeof l.target === 'string' ? l.target : (l.target as NodeDatum).id
+        if (!neighborMap.has(s)) neighborMap.set(s, new Set())
+        if (!neighborMap.has(t)) neighborMap.set(t, new Set())
+        neighborMap.get(s)!.add(t)
+        neighborMap.get(t)!.add(s)
+      }
+
+      nodesAll.on('pointerenter', function (_event: Event, d: NodeDatum) {
+        try {
+          if (!simulationStoppedRef || !simulationStoppedRef.current) return
+        } catch (err) {
+          // non-fatal: DOM may be unavailable in test environments
+          // eslint-disable-next-line no-console
+          console.debug('useGraphSimulation: hover handler early exit', err)
+          return
+        }
+
+        nodesAll.classed('faded', true).classed('active', false)
+        labelsAll.classed('faded', true)
+        linksAll.classed('faded-link', true)
+
+        const hoveredId = d.id
+        d3.select(this).classed('faded', false).classed('active', true)
+        labelsAll.filter((ld: NodeDatum) => ld.id === hoveredId).classed('faded', false)
+
+        const neigh = neighborMap.get(hoveredId)
+        if (neigh) {
+            neigh.forEach(nid => {
+            nodesAll.filter((nd: NodeDatum) => nd.id === nid).classed('faded', false).classed('active', true)
+            labelsAll.filter((nd: NodeDatum) => nd.id === nid).classed('faded', false)
+            linksAll
+              .filter((ld: D3Link | LinkDatum) => {
+                const sSource = (ld as D3Link).source
+                const s = typeof sSource === 'string' ? sSource : (sSource as NodeDatum).id
+                const tSource = (ld as D3Link).target
+                const t = typeof tSource === 'string' ? tSource : (tSource as NodeDatum).id
+                return (s === hoveredId && t === nid) || (t === hoveredId && s === nid)
+              })
+              .classed('faded-link', false)
+          })
+        }
+      })
+
+      nodesAll.on('pointerleave', function () {
+        try {
+          if (!simulationStoppedRef || !simulationStoppedRef.current) return
+        } catch {
+          return
+        }
+        nodesAll.classed('faded', false).classed('active', false)
+        labelsAll.classed('faded', false)
+        linksAll.classed('faded-link', false)
+      })
+    } catch {
+      // ignore in non-DOM environments
+    }
+
+  // 레이블 바인딩: 노드 레이블을 별도 그룹에 추가하여 노드/링크보다 위에
+  // 표시되도록 하고, 표시/비표시 제어를 쉽게 합니다.
+  const labelSel = labelGroup.selectAll<SVGTextElement, NodeDatum>('text').data(nodes as NodeDatum[], (d: NodeDatum) => d.id)
     labelSel.join(
-      enter => enter.append('text').attr('class', 'label').attr('font-size', 11).attr('fill', '#c9d4e3').attr('stroke', 'none').attr('pointer-events', 'none').style('opacity', 1).style('font-family', 'Arial, sans-serif').text(d => d.title),
+      enter =>
+        enter
+          .append('text')
+          .attr('class', 'label')
+          .attr('font-size', 11)
+          .attr('fill', '#c9d4e3')
+          .attr('stroke', 'none')
+          .attr('pointer-events', 'none')
+          .style('opacity', 1)
+          .style('font-family', 'Arial, sans-serif')
+          .text(d => d.title),
       update => update.text(d => d.title),
       exit => exit.remove()
     )
     labelSelRef.current = labelGroup.selectAll('text')
 
-    // Simulation: if exists, update nodes/links; otherwise create
     if (simulationRef.current) {
       simulationRef.current.nodes(nodes)
       const linkForce = simulationRef.current.force('link') as d3.ForceLink<NodeDatum, LinkDatum>
@@ -378,7 +438,6 @@ export default function useGraphSimulation(params: Params) {
               n._idleTicks = 0
             }
 
-            // don't auto-pin nodes that are actively being dragged by the user
             if (!n._autoPinned && !(n._dragging) && (n._idleTicks ?? 0) >= IDLE_TICKS_TO_STOP) {
               n.vx = 0
               n.vy = 0
@@ -391,19 +450,29 @@ export default function useGraphSimulation(params: Params) {
           }
 
           const ratio = currentNodes.length > 0 ? autoPinnedCount / currentNodes.length : 1
-          // Don't stop the simulation while the user is actively dragging a node
           if (ratio >= NODE_IDLE_RATIO && draggingCount === 0) {
             try {
               sim.stop()
-            } catch {
-              // ignore
-            }
+              try {
+                if (simulationStoppedRef) simulationStoppedRef.current = true
+                } catch (innerErr) {
+                  // best-effort write; log and continue
+                  // eslint-disable-next-line no-console
+                  console.debug('useGraphSimulation: failed to mark stopped', innerErr)
+                }
+            } catch (err) {
+                // ignore rendering error, but log for debugging
+                // eslint-disable-next-line no-console
+                console.debug('useGraphSimulation: error stopping simulation', err)
+              }
             for (let i = 0; i < currentNodes.length; i++) {
               currentNodes[i]._idleTicks = 0
             }
           }
-        } catch {
-          // ignore
+        } catch (err) {
+          // ignore tick loop error, but log to assist debugging
+          // eslint-disable-next-line no-console
+          console.debug('useGraphSimulation: tick handler error', err)
         }
       })
 
@@ -436,7 +505,7 @@ export default function useGraphSimulation(params: Params) {
         }
       }
     }
-    // Ensure we always clear any lingering simulation when the effect is torn down
+
     return () => {
       simulationRef.current?.stop()
       simulationRef.current = null
@@ -449,5 +518,5 @@ export default function useGraphSimulation(params: Params) {
         kickTimerRef.current = null
       }
     }
-  }, [svgRef, dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick, initializedRef, kickTimerRef, zoomRef, simulationRef, nodeSelRef, linkSelRef, labelSelRef, showMissingRef])
+  }, [svgRef, dims.w, dims.h, width, height, data, onNodeClick, onBackgroundClick, initializedRef, kickTimerRef, zoomRef, simulationRef, nodeSelRef, linkSelRef, labelSelRef, showMissingRef, simulationStoppedRef])
 }

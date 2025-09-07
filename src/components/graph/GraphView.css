@@ -1,19 +1,19 @@
 .graph-wrap{position:relative;width:100%;height:100%}
 .graph-controls{position:absolute;top:8px;right:8px;display:flex;align-items:center;gap:8px;background:rgba(20,24,32,.6);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);border-radius:12px;padding:6px 10px;box-shadow:0 2px 8px rgba(0,0,0,.25);color:#c9d4e3;font-size:12px;user-select:none;pointer-events:auto}
 
-/* faded/underlit visuals for hover de-emphasis */
+/* 호버 시 다른 요소들을 희미하게(언더라이팅) 보이도록 하는 시각 효과 */
 .graph-wrap svg circle.node { opacity: 1; transition: opacity 160ms ease; }
 .graph-wrap svg line.link { opacity: 1; transition: opacity 160ms ease; }
 .graph-wrap svg line.link { stroke: #7a92a3; stroke-opacity: 0.45; stroke-linecap: round; stroke-width: 0.8px; pointer-events: none; }
 
-/* Remove node stroke set by D3 attributes to improve label contrast */
+/* 노드의 stroke 속성을 제거하여 레이블 대비를 개선 */
 .graph-wrap svg circle.node { stroke: none !important; stroke-width: 0 !important; }
 .graph-wrap svg text.label { opacity: 1; transition: opacity 160ms ease; }
 .graph-wrap svg .faded { opacity: 0.12 !important; transition: opacity 160ms ease; pointer-events: none; }
 .graph-wrap svg .faded-link { opacity: 0.06 !important; transition: opacity 160ms ease; pointer-events: none; }
 .graph-wrap svg .active { opacity: 1 !important; transition: opacity 120ms ease; pointer-events: all; }
 
-/* Ensure background rect uses default cursor (not pointer/hand) */
+/* 배경 rect에 기본 커서를 사용하도록 보장 */
 .graph-svg .bg-rect { cursor: default; }
 
-/* No JS-driven hover visuals: keep nodes/links/labels with default styles. */
+/* JS 기반 호버 시각 효과는 이 CSS에서 기본 스타일만 유지합니다. */

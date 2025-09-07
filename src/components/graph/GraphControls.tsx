@@ -24,7 +24,7 @@ const GraphControls: React.FC<Props> = ({ showMissing, onToggleShowMissing }) =>
           checked={showMissing}
           onChange={onToggleShowMissing}
         />
-        Include Missings
+  누락 항목 포함
       </label>
     </div>
   )
