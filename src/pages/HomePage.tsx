@@ -40,7 +40,7 @@ const HomePage: React.FC = () => {
           }
           if (!posts || posts.length === 0) {
             return (
-              <p>아직 게시된 포스트가 없어요. <em>src/posts</em> 폴더에 마크다운 파일(.md)을 추가해 주세요.</p>
+              <p>아직 게시된 포스트가 없어요. <em>content/Postings</em> 폴더에 마크다운 파일(.md)을 추가해 주세요.</p>
             )
           }
           return posts.map(post => (

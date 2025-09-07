@@ -1,5 +1,7 @@
 # GitHub Pages 배포 (GitHub Actions)
 
+GitHub Pages로 사이트를 배포하는 절차과 워크플로우 요약입니다.
+
 프로덕션 배포는 GitHub Actions가 자동으로 수행합니다. `main` 브랜치에 푸시하면 빌드 후 Pages로 게시됩니다. 로컬 배포 스크립트는 사용하지 않습니다.
 
 ## 파이프라인 개요

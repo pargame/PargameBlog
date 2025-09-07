@@ -1,157 +1,38 @@
+
 # PargameBlog
 
-> 빠른 안내: 새 AI 에이전트/첫 방문자는 우선 docs/00-ai-onboarding.md를 확인하세요.
-> https://github.com/pargame/PargameBlog/blob/main/docs/00-ai-onboarding.md
+React + Vite 기반 개인 블로그 및 위키형 지식 그래프 뷰어입니다.
 
-React + Vite 기반의 개인 블로그 + 지식 그래프 뷰어입니다. 블로그 포스팅과 주제별 위키링크 그래프를 제공합니다.
+핵심
 
-## ✨ 주요 기능
+- 컨텐츠: `content/`
+- 그래프: `src/components/graph` (D3)
+- 시뮬레이션 훅: `src/hooks/useGraphSimulation.ts`
 
-- **📝 블로그**: `src/posts/` 마크다운을 홈에 최신순으로 노출, `/posts/:slug` 상세 렌더링
-- **🌐 그래프 뷰**: `src/content/` 내 주제별 폴더를 위키링크 그래프로 시각화 (옵시디언 스타일)
-- **🔗 위키링크**: `[[페이지]]` 문법으로 문서 간 연결
-- **📱 반응형**: 모바일/데스크톱 모두 지원
-- **🚀 자동 배포**: GitHub Pages 자동 배포
+빠른 시작
 
-## 📁 프로젝트 구조
+- 개발: `npm run dev` (http://localhost:5173)
+- 빌드: `npm run build`
+- 린트: `npm run lint`
+- 타입체크: `npm run typecheck`
 
-```
-src/
-├── content/                  # 🌐 주제별 지식 그래프 + 포스트(권장)
-│   ├── posts/               # 📝 블로그 포스트 (권장 위치)
-│   ├── UnrealEngine/        # 언리얼 엔진 관련 문서
-│   └── [새주제]/            # 새 폴더 → 자동으로 그래프에 추가
-├── posts/                    # 블로그 포스트 (legacy compatibility)
-│   └── YYYY-MM-DD-title.md   # 날짜-제목 형식
-├── lib/                      # 📚 유틸리티 라이브러리
-│   ├── posts.ts              # 블로그 포스트 로더 (두 위치 모두 지원)
-│   ├── content.ts            # 컬렉션 자동 감지
-│   ├── graph.ts              # 그래프 데이터 생성
-│   └── doc.ts                # 문서 로더
-├── components/              # 🎨 재사용 컴포넌트
-│   ├── GraphView.tsx       # D3.js 그래프 렌더링
-│   ├── GraphModal.tsx      # 그래프 모달
-│   ├── InsightDrawer.tsx   # 사이드 패널
-│   └── Footer.tsx          # 푸터
-└── pages/                   # 📄 페이지 컴포넌트
-    ├── HomePage.tsx        # 블로그 목록
-    ├── PostPage.tsx        # 포스트 상세
-    ├── AboutPage.tsx       # 소개
-    └── GraphPage.tsx       # 그래프 뷰
-```
+배포
 
-## 🚀 실제 배포(자동) 및 개발 서버
+- GitHub Pages 자동 배포(메인 브랜치 → CI → Pages). 빌드 베이스는 `vite.config.js`의 `base` 설정을 확인하세요.
 
-- **배포 URL**: https://pargame.github.io/PargameBlog/
-- **자동 배포**: main 브랜치 푸시 → `typecheck → lint → build → Pages 배포`
-- **로컬 개발**: `npm run dev` (기본 http://localhost:5173, 점유 시 Vite가 다른 포트를 선택)
+유틸리티 스크립트(간단 요약)
 
-## 📝 콘텐츠 작성 가이드
-
-### 블로그 포스트
-```bash
-# 위치(권장): src/content/posts/
-# 파일명: YYYY-MM-DD-slug.md
-# 예시: src/content/posts/2025-09-04-hello-blog.md
-# Legacy compatibility
-#
-# The project still supports `src/posts/` for older posts, but new content should
-# be placed under `src/content/`. Where possible, migrate callers to the newer
-# `src/content/` layout; the codebase provides compatibility shims but those
-# are intended for transition and may be removed in a future major version.
-```
-
-```markdown
----
-title: 블로그 포스트 제목
-date: 2025-09-04
-excerpt: 짧은 요약 (선택사항)
----
-
-포스트 내용은 여기부터 마크다운으로 작성합니다.
-```
-
-### 지식 그래프 문서
-```bash
-# 위치: src/content/주제명/
-# 파일명: 페이지명.md (한글 지원)
-# 예시: src/content/Algorithm/정렬알고리즘.md
-```
-
-```markdown
-# 페이지 제목
-
-이 문서는 [[관련페이지]]와 연결됩니다.
-
-위키링크 문법:
-- [[대상페이지]]: 기본 링크
-- [[대상페이지|표시명]]: 커스텀 표시명
-
-렌더링 노트:
-- remark 플러그인이 `[[Page]]`를 내부 링크 노드로 변환합니다
-- 인사이트 드로어에서 위키링크 클릭 시 동일 패널 내에서 해당 문서로 전환됩니다
-```
-
-## 🔧 개발 명령어
-
-- `npm run dev`: 개발 서버 시작
-- `npm run build`: 프로덕션 빌드
-- `npm run lint`: ESLint 검사
-- `npm run typecheck`: TypeScript 타입 검사
-
-## ⚙️ 누락 문서 생성 스크립트 (create_missing_docs.py)
-
-루트에 있는 `create_missing_docs.py` 스크립트는 `src/content/` 폴더를 스캔하여 위키링크(`[[Page]]` 또는 `[[Target|Alias]]`)로 참조되지만 실제 파일이 없는 문서를 자동으로 생성합니다.
-
-주요 기능
-- `--dry-run`: 생성할 파일 목록만 출력(실제 생성 안 함)
-- `--collection` 또는 `-c`: 특정 컬렉션(폴더)만 검사/생성 (예: `Algorithm`, `UnrealEngine`) — 지정하지 않으면 모든 컬렉션을 검사합니다
-- 별칭 처리: `[[UActionInput|AI]]` 같은 링크는 좌측(타깃) `UActionInput`을 기준으로 파일을 생성합니다
-- 프런트매터 자동 생성: 생성되는 파일의 YAML frontmatter에 `title`을 적절히 채웁니다(참조된 문서가 있으면 해당 문서의 title을 우선 사용, 없으면 링크 타깃을 제목으로 사용)
-
-사용 예제
-
-```bash
-# 전체 컬렉션에서 실제 생성(주의: 파일이 실제로 만들어집니다)
-python3 create_missing_docs.py
-
-# 모든 컬렉션에서 dry-run (생성 예정 목록만 출력)
-python3 create_missing_docs.py --dry-run
-
-# 특정 컬렉션(예: Algorithm)만 검사 — 실제 생성
-python3 create_missing_docs.py -c Algorithm
-
-# 특정 컬렉션 dry-run
-python3 create_missing_docs.py --collection "UnrealEngine" --dry-run
-```
-
-생성 규칙 요약
-- 생성되는 파일명: 링크의 좌측 텍스트 그대로 `Target.md` (예: `[[UActionInput|AI]]` → `UActionInput.md`)
-- 생성 위치: 링크가 참조된 컬렉션 폴더 하위 (`src/content/<컬렉션>/Target.md`)
-- 제목(frontmatter.title): 기존 문서의 title이 있으면 동일하게 사용, 없으면 링크 타깃 텍스트를 사용
+- `npm run create-missing-docs -- [--dry-run]` — `content/`의 `[[Target]]` 링크를 스캔해 없으면 플레이스홀더 생성. 권장: Node 버전(`scripts/create_missing_docs.cjs`).
+- `node scripts/find-unused.cjs --mode=files|full|advanced` — 미사용 후보 탐지(통합 스크립트). `advanced`는 `tsconfig.json`의 paths를 고려해 `unused-candidates.json`을 생성.
+- `node scripts/add-headers.cjs` — 프로젝트 파일 상단에 헤더 일괄 추가(옵션 확인).
 
 권장 워크플로우
-1. 먼저 `--dry-run`으로 어떤 파일이 생성될지 확인하세요.
-2. 결과가 적절하면 `--dry-run` 없이 실행하여 실제 파일을 생성하세요.
 
-스크립트 위치: 저장소 루트의 `create_missing_docs.py` (터미널에서 저장소 루트로 이동 후 실행)
+1. 변경 전: `npm run typecheck && npm run lint && npm run build`
+2. 자동 수정 전에는 항상 드라이런(`--dry-run` 또는 `:dry`)으로 확인
+3. 자동 생성/수정된 파일은 수동 검토 및 편집
 
+문서
 
-## 🌟 새로운 주제 추가하기
-
-1. **폴더 생성**: `mkdir src/content/NewTopic`
-2. **문서 작성**: 위키링크로 문서들을 연결
-3. **자동 반영**: 개발 서버 재시작 후 `/graph` 페이지에서 확인
-
-## 📚 상세 문서
-
-자세한 개발 가이드는 `docs/` 폴더를 참조하세요:
-- `docs/00-ai-onboarding.md`: 핵심 정보 요약
-- `docs/guide/`: 개발자 가이드
-- `docs/architecture/`: 아키텍처 설명
-
-## 🧰 코드 스타일과 품질
-- ESLint(+typescript-eslint)와 TypeScript를 사용해 일관된 스타일과 타입 안정성을 유지합니다
-- any는 사용하지 않으며, 필요 시 unknown과 구체 타입을 사용합니다
-- 개발용 console 로그는 제거되어야 합니다(예외: 로더 경고/오류)
+- 그래프 유지보수 가이드: `docs/graph-maintenance.md`
 

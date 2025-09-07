@@ -16,10 +16,10 @@ type Doc = {
 
 export function getDocFromCollection(collection: string, id: string): Doc | undefined {
   const rel = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
-  const abs = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
+  const abs = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string | { default: string }>
   const all = { ...rel, ...abs }
 
-  const prefix1 = `/src/content/${collection}/`
+  const prefix1 = `/content/${collection}/`
   const prefix2 = `../content/${collection}/`
 
   for (const [path, mod] of Object.entries(all)) {

@@ -90,9 +90,9 @@ const GraphPage: React.FC = () => {
       </div>
 
       <div className="content-section">
-        <h2>Graph Archives</h2>
+        <h2>GraphArchives</h2>
         {collections.length === 0 ? (
-          <p>아직 아카이브가 없습니다. <em>src/content/&lt;name&gt;</em>에 마크다운을 추가해 보세요.</p>
+          <p>아직 GraphArchives가 없습니다. <em>content/GraphArchives/&lt;name&gt;</em>에 마크다운을 추가해 보세요.</p>
         ) : (
           collections.map(name => (
               <CollectionCard key={name} name={name} onOpen={(v) => setOpened(v)} />

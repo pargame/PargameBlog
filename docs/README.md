@@ -1,26 +1,17 @@
-# 문서 색인 (유지보수용 레퍼런스)
+# Docs Index
 
-이 저장소의 `docs/`는 변경 로그가 아니라 현재 코드베이스의 유지보수용 참조 문서입니다. 모든 문서는 "현재 동작 방식"과 "마이그레이션/수정 방법"을 명확히 설명해야 합니다.
+한 줄 설명: 이 폴더에 포함된 문서들의 색인과 리팩토링 방침을 제공합니다.
 
-## 주요 문서
-- `00-ai-onboarding.md` — 빠른 현황 요약: 핵심 아키텍처와 필수 실행 명령(개발자/자동화용)
-- `DEVELOPER_GUIDE.md` — 로컬 개발, 빌드, 디버깅 및 PR 체크리스트(실무 중심)
-- `guide/02-scripts.md` — 스크립트(명령)와 사용 가이드(권장 순서 포함)
-- `guide/03-quality-gates.md` — PR/CI용 품질 게이트(타입, 린트, 빌드, 마이그레이션 체크)
-- `architecture/01-overview.md` — 아키텍처 핵심 포인트(핵심 모듈/데이터 흐름)
+- `01-getting-started.md` — 로컬 개발, 프로젝트 개요, 배포 요약
+- `01-github-pages.md` — GitHub Pages 배포 및 Vite 설정 관련 상세
+- `02-scripts.md` — 개발/배포에서 사용하는 주요 npm 스크립트 설명
+- `03-quality-gates.md` — CI/Quality Gates, typecheck, lint, build 절차
+- `04-component-development.md` — 컴포넌트 설계/개발 가이드
+- `05-content-writing.md` — 컨텐츠(마크다운/위키) 작성 규칙
+- `ASSETS.md` — 에셋 운영 가이드
+- `COMMENTING.md` — 코드 주석 관례
+- `graph-maintenance-guide.md` — 그래프 뷰(시뮬레이션/D3) 유지보수 가이드
 
-- `graph-maintenance.md` — D3 기반 그래프 시각화의 유지보수 가이드(시뮬레이션 책임, 디버깅, 테스트)
+변경 제안
 
-## 유지보수 원칙
-- 문서는 코드 변경 시 동시 업데이트 되어야 합니다. (PR 템플릿에 docs 체크박스 포함 권장)
-- 문서 내 예시는 실제 코드 스니펫(현재 import/함수명)과 일치해야 합니다.
-
-## 빠른 작업 플로우 (요약)
-1. 코드 변경
-2. `npm run typecheck && npm run lint && npm run build`
-3. 관련 `docs/` 업데이트
-4. PR 생성 및 CI 통과
-
----
-
-참고: 각 문서(예: graph 관련)는 해당 모듈의 현재 API와 마이그레이션 예시를 반드시 포함합니다.
+- 중요: 병합한 문서를 확인한 뒤 불필요한 중복이 남아있다면 추가로 정리하겠습니다.

@@ -25,11 +25,11 @@ import { buildIdTitleMap, extractWikiLinks } from './graphParser'
  */
 export async function buildGraphForCollectionAsync(collection: string): Promise<GraphData> {
   const relLoaders = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
-  const absLoaders = import.meta.glob('/src/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
+  const absLoaders = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
   const allLoaders = { ...relLoaders, ...absLoaders }
 
   const relPrefix = `../content/${collection}/`
-  const absPrefix = `/src/content/${collection}/`
+  const absPrefix = `/content/${collection}/`
   const entries = Object.entries(allLoaders).filter(([p]) => p.includes(relPrefix) || p.includes(absPrefix))
 
   const modules: Record<string, string> = {}

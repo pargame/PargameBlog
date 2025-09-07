@@ -11,7 +11,15 @@ import unwrapModuleDefault from './moduleUtils'
 
 // Use dynamic import to avoid bundling all posts into the app's initial chunks.
 // `postsGlob` returns functions that when called import the raw markdown content as string.
-const postsGlob = () => import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
+// Support legacy `src/posts/**` and multiple content locations:
+// - /content/posts/** (lowercase)
+// - /content/Postings/** (user-renamed folder, case variants)
+const postsGlob = () => {
+  const rel = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
+  const absLower = import.meta.glob('/content/posts/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
+  const absUpper = import.meta.glob('/content/Postings/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
+  return { ...rel, ...absLower, ...absUpper }
+}
 
 let cached: Post[] | null = null
 let asyncCache: Post[] | null = null
@@ -129,9 +137,12 @@ async function loadAllPosts(): Promise<Post[]> {
 export function getAllPosts(): Post[] {
   if (import.meta.env.DEV) {
     // In dev, computing posts eagerly is acceptable for fast iteration.
-    if (!cached) {
-      // attempt to eagerly import via a temporary eager glob
-      const eager = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+      if (!cached) {
+      // attempt to eagerly import via temporary eager globs (legacy + content variants)
+      const eagerRel = import.meta.glob('../posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+      const eagerAbsLower = import.meta.glob('/content/posts/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+      const eagerAbsUpper = import.meta.glob('/content/Postings/**/*.md', { query: '?raw', import: 'default', eager: true }) as Record<string, string>
+      const eager = { ...eagerRel, ...eagerAbsLower, ...eagerAbsUpper }
       cached = computePostsFromModules(eager)
     }
     return cached
