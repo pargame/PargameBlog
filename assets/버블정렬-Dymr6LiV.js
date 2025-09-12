@@ -1,0 +1,38 @@
+const n=`# 버블 정렬
+
+버블 정렬은 인접한 두 원소를 비교하여 정렬하는 가장 간단한 [[정렬알고리즘]] 중 하나입니다.
+
+## 동작 원리
+
+1. 배열의 첫 번째 원소부터 시작
+2. 인접한 두 원소를 비교
+3. 순서가 잘못되었으면 교환
+4. 배열의 끝까지 반복
+5. 한 번의 순회가 끝나면 가장 큰 원소가 맨 뒤로 이동
+6. 정렬이 완료될 때까지 반복
+
+## 구현 예시
+
+\`\`\`python
+def bubble_sort(arr):
+    n = len(arr)
+    for i in range(n):
+        for j in range(0, n - i - 1):
+            if arr[j] > arr[j + 1]:
+                arr[j], arr[j + 1] = arr[j + 1], arr[j]
+    return arr
+\`\`\`
+
+## 특징
+
+- [[시간복잡도]]: O(n²)
+- 공간복잡도: O(1)
+- 안정 정렬 (Stable Sort)
+- 제자리 정렬 (In-place Sort)
+
+## 관련 알고리즘
+
+- [[선택정렬]]: 비슷한 성능의 간단한 정렬
+- [[삽입정렬]]: 작은 데이터에서 더 효율적
+`;export{n as default};
+//# sourceMappingURL=버블정렬-Dymr6LiV.js.map

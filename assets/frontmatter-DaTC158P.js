@@ -1,0 +1,2 @@
+function f(i){const s={data:{},content:i},e=i.match(/^---\s*[\r\n]+([\s\S]*?)^[ \t]*---\s*[\r\n]+/m);if(!e)return s;const c=e[1]||"",r={};for(const a of c.split(/\r?\n/)){const n=a.trim();if(!n||n.startsWith("#"))continue;const o=n.indexOf(":");if(o===-1)continue;const l=n.slice(0,o).trim();let t=n.slice(o+1).trim();(t.startsWith('"')&&t.endsWith('"')||t.startsWith("'")&&t.endsWith("'"))&&(t=t.slice(1,-1)),r[l]=t}return s.data=r,s.content=i.slice(e[0].length),s}export{f as p};
+//# sourceMappingURL=frontmatter-DaTC158P.js.map
