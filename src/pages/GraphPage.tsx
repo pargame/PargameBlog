@@ -8,15 +8,15 @@
 import React, { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { listSubCollections } from '../lib/content'
-// GraphModal은 무겁습니다 (GraphView + d3). 초기 번들을 작게 유지하기 위해 lazy-load합니다.
+// GraphModal is heavy (GraphView + d3). Lazy-load it so initial bundle stays small.
 const GraphModal = lazy(() => import('../components/graph/GraphModal'))
-// InsightDrawer는 react-markdown과 remark-gfm을 사용합니다; GraphPage에서 번들링하지 않도록 lazy-load합니다.
+// InsightDrawer uses react-markdown and remark-gfm; lazy-load to avoid bundling them in GraphPage
 const InsightDrawer = lazy(() => import('../components/InsightDrawer'))
 import CollectionCard from '../components/CollectionCard'
 
 const GraphPage: React.FC = () => {
-  // 상태
-  // content/GraphArchives 하위의 서브 컬렉션을 원합니다 (예: Algorithm, UnrealEngine)
+  // State
+  // We want sub-collections under content/GraphArchives (e.g., Algorithm, UnrealEngine)
   const collections = useMemo(() => listSubCollections('GraphArchives'), [])
   const [opened, setOpened] = useState<string | null>(null)
   const [insightId, setInsightId] = useState<string | null>(null)
@@ -28,15 +28,16 @@ const GraphPage: React.FC = () => {
     insightIdRef.current = insightId
   }, [insightId])
   
-  // ?open=<collection>일 때 자동 열기
-  // 참고: 경쟁 조건을 피하기 위해 의도적으로 `opened`를 deps에서 생략합니다.
-  // 모달 닫힐 때 `opened`를 지우면 이 효과가 실행되어
-  // URL에 파라미터가 남아 있는 동안 즉시 모달을 다시 열 수 있습니다.
-  // 여기서는 URL 변경과 컬렉션 목록 업데이트에만 응답합니다.
+  // Auto-open when ?open=<collection>
+  // Note: intentionally omit `opened` from deps to avoid a race where
+  // clearing `opened` (on modal close) would cause this effect to run
+  // while the URL still contains the param, immediately re-opening the
+  // modal. We only want to respond to URL changes and collection list
+  // updates here.
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     const toOpen = params.get('open')
-    // 'GraphArchives/Algorithm' 같은 형식을 받아 리프가 알려진 컬렉션인지 검증합니다.
+    // Accept forms like 'GraphArchives/Algorithm' and validate the leaf is a known collection
     if (toOpen) {
       const parts = toOpen.split('/').filter(Boolean)
       const leaf = parts[parts.length - 1]
@@ -48,22 +49,45 @@ const GraphPage: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.search, collections])
 
-  // 로컬 `opened` 상태와 URL `?open=` 파라미터를 동기화합니다. 이는
-  // 네비게이션을 중앙화하고 상태를 설정한 후 명령형으로 네비게이트하여
-  // 중복 열기 호출을 피합니다.
+  // Keep the URL `?open=` param in sync with local `opened` state. This
+  // centralizes navigation and avoids races where we set state and then
+  // imperatively navigate which could cause duplicate open calls.
   useEffect(() => {
     const params = new URLSearchParams(location.search)
     if (opened) params.set('open', opened)
     else params.delete('open')
     const search = params.toString() ? `?${params.toString()}` : ''
-    // 히스토리를 어지럽히지 않도록 히스토리 항목을 교체합니다.
+    // Replace history entry rather than push to avoid cluttering history.
     navigate({ pathname: location.pathname, search }, { replace: true })
+    try {
+      // inform global simulation controller about modal visibility so the
+      // simulation can be paused when the modal is closed and resumed when opened.
+      if (typeof window !== 'undefined' && window.dispatchEvent) {
+        if (opened) window.dispatchEvent(new Event('pargame:resumeSimulation'))
+        else window.dispatchEvent(new Event('pargame:pauseSimulation'))
+      }
+    } catch {
+      // no-op: dispatch failure shouldn't block navigation
+    }
   }, [opened, location.pathname, location.search, navigate])
+
+  // Pause simulation when this page unmounts (navigation away). This ensures
+  // the simulation isn't left running when the user navigates to another route.
+  useEffect(() => {
+    return () => {
+      try {
+        if (typeof window !== 'undefined' && window.dispatchEvent) window.dispatchEvent(new Event('pargame:pauseSimulation'))
+      } catch {
+        // ignore
+      }
+    }
+  }, [])
   
-  // 클로저 문제를 피하기 위한 최신 insightId 값의 ref
-  // 이벤트 핸들러
+  // Ref for latest insightId value (to avoid closure issues)
+  // Event handlers
   const handleCloseModal = useCallback(() => {
-    // 로컬 상태만 업데이트합니다; URL은 `opened`를 감시하는 효과에 의해 동기화됩니다.
+    // Only update local state; URL will be synced by the effect watching
+    // `opened`.
     setOpened(null)
     setInsightId(null)
   }, [])
@@ -82,7 +106,7 @@ const GraphPage: React.FC = () => {
   }, [])
 
   const handleGraphBackgroundClick = useCallback(() => {
-    // D3 핸들러 내부의 오래된 클로저 문제를 피하기 위해 ref에서 최신 insightId를 읽습니다.
+    // Read latest insightId from ref to avoid stale-closure issues inside D3 handlers
     if (insightIdRef.current) {
       handleCloseInsight()
     }
@@ -115,6 +139,7 @@ const GraphPage: React.FC = () => {
               onClose={handleCloseModal}
               onNodeClick={handleNodeClick}
               onGraphBackgroundClick={handleGraphBackgroundClick}
+              focusNodeId={insightId}
             />
           </Suspense>
           <Suspense fallback={<div className="suspense-fallback-small">패널 준비중…</div>}>

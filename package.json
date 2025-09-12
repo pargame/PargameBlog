@@ -9,7 +9,15 @@
     "find-unused": "node scripts/find-unused-simple.cjs",
     "build": "vite build",
     "lint": "eslint .",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "check": "npm run lint && npm run typecheck",
+  "guard": "npm run -s check",
+    "test": "vitest --run",
+    "test:watch": "vitest",
+  "test:coverage": "vitest --run --coverage && node scripts/coverage-check.cjs",
+  "coverage": "npm run test:coverage",
+    "prepare": "husky install",
+    "bootstrap": "npm ci && npx husky install || true && (test -f .husky/pre-commit || npx husky add .husky/pre-commit \"npx --no -- lint-staged\") || true"
   },
   "dependencies": {
     "d3": "^7.9.0",
@@ -23,6 +31,8 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.33.0",
+    "@testing-library/jest-dom": "^6.0.0",
+    "@testing-library/react": "^14.0.0",
     "@types/d3": "^7.4.3",
     "@types/node": "^22.10.1",
     "@types/react": "^19.1.10",
@@ -32,6 +42,9 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.20",
     "globals": "^16.3.0",
+    "husky": "^8.0.0",
+    "jsdom": "^26.1.0",
+    "lint-staged": "^13.0.0",
     "rehype-sanitize": "^6.0.0",
     "rehype-stringify": "^10.0.1",
     "remark-parse": "^11.0.0",
@@ -41,6 +54,34 @@
     "typescript": "~5.6.2",
     "typescript-eslint": "^8.20.0",
     "unified": "^11.0.5",
-    "vite": "^7.1.2"
+    "vite": "^7.1.2",
+    "vitest": "^1.4.8",
+    "@vitest/coverage-istanbul": "^1.6.1"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx,js,jsx}": [
+      "eslint --fix"
+    ]
+  },
+  "vitest": {
+    "globals": true,
+    "environment": "jsdom",
+    "coverage": {
+      "provider": "istanbul",
+      "reporter": [
+        "text",
+        "json",
+        "html"
+      ],
+      "all": true,
+      "include": [
+        "src/hooks/useGraphSimulation.ts"
+      ],
+      "exclude": [
+        "**/__tests__/**",
+        "**/*.test.*",
+        "src/hooks/**/__tests__/**"
+      ]
+    }
   }
 }

@@ -16,9 +16,10 @@ interface GraphModalProps {
   onClose: () => void
   onNodeClick: (node: { id: string; title: string; missing?: boolean }) => void
   onGraphBackgroundClick: () => void
+  focusNodeId?: string | null
 }
 
-const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick }) => {
+const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick, focusNodeId }) => {
   return (
     <div className="modal" onClick={e => e.stopPropagation()}>
       <Suspense fallback={<div className="suspense-fallback">모달 로딩중…</div>}>
@@ -27,6 +28,7 @@ const GraphModal: React.FC<GraphModalProps> = ({ collection, onClose, onNodeClic
           onClose={onClose}
           onNodeClick={onNodeClick}
           onGraphBackgroundClick={onGraphBackgroundClick}
+          selectedNodeId={focusNodeId}
         />
       </Suspense>
     </div>

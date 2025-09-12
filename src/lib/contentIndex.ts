@@ -14,7 +14,7 @@ function extractNameFromPath(path: string) {
   return file.replace(/\.md$/, '')
 }
 
-// 비동기 로더: 요청된 컬렉션의 마크다운 파일만 동적으로 임포트합니다.
+// Async loader: dynamically import only the requested collection's markdown files.
 export async function getContentItemsForCollectionAsync(collection: string): Promise<Item[]> {
   const rel = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
   const abs = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string | { default: string }>>
@@ -48,5 +48,5 @@ export async function getContentItemsForCollectionAsync(collection: string): Pro
   return items
 }
 
-// 참고: 오래된 동기 API는 eager bundling을 피하기 위해 의도적으로 제거되었습니다.
-// 대신 getContentItemsForCollectionAsync(collection)을 사용하세요. 이는 콘텐츠를 동적으로 임포트합니다.
+// Note: the old synchronous API was intentionally removed to avoid eager bundling.
+// Use getContentItemsForCollectionAsync(collection) instead which dynamically imports content.

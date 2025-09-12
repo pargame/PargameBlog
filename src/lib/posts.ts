@@ -10,11 +10,11 @@ import { parseFrontmatter } from './frontmatter'
 import logger from './logger'
 import unwrapModuleDefault from './moduleUtils'
 
-// 앱의 초기 청크에 모든 포스트를 번들링하지 않도록 동적 임포트를 사용합니다.
-// `postsGlob`은 호출 시 원시 마크다운 콘텐츠를 문자열로 임포트하는 함수를 반환합니다.
-// 여러 콘텐츠 위치를 지원합니다:
-// - /content/posts/** (소문자)
-// - /content/Postings/** (사용자가 이름을 바꾼 폴더, 대소문자 변형)
+// Use dynamic import to avoid bundling all posts into the app's initial chunks.
+// `postsGlob` returns functions that when called import the raw markdown content as string.
+// Support multiple content locations:
+// - /content/posts/** (lowercase)
+// - /content/Postings/** (user-renamed folder, case variants)
 const postsGlob = () => {
   const absLower = import.meta.glob('/content/posts/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
   const absUpper = import.meta.glob('/content/Postings/**/*.md', { query: '?raw', import: 'default' }) as Record<string, () => Promise<string>>
@@ -26,7 +26,7 @@ let asyncCache: Post[] | null = null
 function extractSlugFromPath(path: string): string {
   const fileName = path.split('/').pop() || ''
   const base = fileName.replace(/\.md$/, '')
-  // 날짜 접두사(YYYY-MM-DD-)가 있으면 제거합니다.
+  // Remove date prefix (YYYY-MM-DD-) if present
   return base.replace(/^\d{4}-\d{2}-\d{2}-/, '')
 }
 
@@ -114,5 +114,5 @@ export async function getPostBySlugAsync(slug: string): Promise<Post | undefined
   return posts.find(p => p.slug === slug)
 }
 
-// 디버그 헬퍼: 어떤 md 파일이 매칭되었는지
-// (내부) 디버그 헬퍼는 프로덕션에서 제거되었습니다.
+// Debug helper: which md files were matched
+// (internal) debug helper was removed in production

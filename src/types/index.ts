@@ -5,7 +5,7 @@
  * 한글 설명: 공용 타입은 이 파일에서 관리하며 컴포넌트/유틸에서 재사용됩니다.
  */
 
-// 애플리케이션 전반에 걸쳐 사용되는 공통 타입
+// Common types used across the application
 
 /**
  * PostMeta
@@ -57,7 +57,7 @@ export interface Document {
   content: string
 }
 
-// RawLink: 내부 표현에서 source/target은 문자열 id입니다.
+// RawLink: internal representation where source/target are string ids.
 /**
  * RawLink
  * 내부 표현의 링크: source/target은 id 문자열

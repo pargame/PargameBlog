@@ -18,9 +18,10 @@ interface Props {
   onClose: () => void
   onNodeClick: (node: { id: string; title: string; missing?: boolean }) => void
   onGraphBackgroundClick: () => void
+  selectedNodeId?: string | null
 }
 
-const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick }) => {
+  const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, onGraphBackgroundClick, selectedNodeId }) => {
   // Derive a human-friendly label: only the last segment of collection path
   const leafName = collection.split('/').filter(Boolean).pop() || collection
   const [graphData, setGraphData] = useState<GraphData | null>(null)
@@ -128,6 +129,7 @@ const GraphModalContent: React.FC<Props> = ({ collection, onClose, onNodeClick, 
                   data={graphData}
                   onNodeClick={onNodeClick}
                   onBackgroundClick={onGraphBackgroundClick}
+                  selectedNodeId={selectedNodeId}
                 />
               ) : (
                 <div className="suspense-fallback">그래프 데이터 준비 중…</div>

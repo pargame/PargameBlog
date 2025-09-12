@@ -6,7 +6,7 @@
  * 한글 설명: 복잡한 YAML(중첩 구조)은 지원하지 않으며, 브라우저 환경에서 안전하게 동작하도록 설계되었습니다.
  */
 
-// 마크다운 파일을 위한 공유 frontmatter 유틸리티
+// Shared frontmatter utilities for Markdown files
 
 export type Frontmatter = Record<string, string>
 

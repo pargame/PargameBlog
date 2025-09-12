@@ -16,7 +16,7 @@ export function formatPostDate(dateStr?: string): string {
     const dd = String(d.getDate()).padStart(2, '0')
     const datePart = `${yyyy}-${mm}-${dd}`
 
-    // 원본 문자열에 시간 구성 요소가 포함되어 있는지 감지합니다.
+    // Detect whether original string contained a time component
     const hasTime = /T|:\d{2}/.test(dateStr)
     if (!hasTime) return datePart
 

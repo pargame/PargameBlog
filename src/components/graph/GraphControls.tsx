@@ -36,4 +36,4 @@ const GraphControls: React.FC<Props> = ({ showMissing, onToggleShowMissing }) =>
   )
 }
 
-export default GraphControls
+export default React.memo(GraphControls)

@@ -23,7 +23,7 @@ export async function buildGraphForCollectionAsync(collection: string): Promise<
       const raw = typeof m === 'string' ? m : m?.default ?? ''
       modules[path] = raw
     } catch {
-      // 개별 임포트 실패 무시
+      // ignore individual import failures
     }
   }))
 

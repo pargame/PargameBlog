@@ -28,6 +28,12 @@ const HomePage: React.FC = () => {
   }, [])
   return (
     <div className="page">
+      <div style={{ width: '100%', textAlign: 'center', background: '#fff9e6', padding: '1rem 0' }}>
+        <span style={{ color: '#1f2937', fontSize: '2.4rem', fontWeight: 800 }}>
+          최신 버전 사이트로 이동해주시기 바랍니다&nbsp;
+          <a href="https://pargame.github.io/MyBlog" target="_blank" rel="noopener noreferrer" style={{ color: '#065f46', fontSize: '2.2rem', fontWeight: 800, textDecoration: 'underline' }}>링크</a>
+        </span>
+      </div>
       <div className="hero-section">
         <h1 className="hero-title">Pargame's Postings</h1>
         <p className="hero-subtitle">마크다운으로 작성하면 포스팅되는 페이지입니다.</p>

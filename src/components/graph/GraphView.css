@@ -30,3 +30,11 @@
 .graph-wrap svg circle.node.missing { fill: var(--graph-node-missing); }
 
 /* JS 기반 호버 시각 효과는 이 CSS에서 기본 스타일만 유지합니다. */
+
+/* 클릭된(선택된) 노드의 테두리 강조 — 요구사항: 클릭된 노드에 테두리 효과 */
+.graph-wrap svg circle.node.selected {
+	stroke: #ffd166; /* warm highlight */
+	stroke-width: 2px;
+	filter: drop-shadow(0 2px 6px rgba(255, 209, 102, 0.25));
+	transition: stroke-width 160ms ease, filter 160ms ease;
+}

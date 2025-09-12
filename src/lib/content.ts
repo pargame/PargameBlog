@@ -14,13 +14,13 @@
  * @returns string[] - content 폴더 하위의 최상위 컬렉션명 배열
  */
 export function listContentCollections(): string[] {
-  // 모든 마크다운을 번들링하지 않도록 파일 경로만 읽습니다 (파일 내용을 eager-load 하지 않음)
+  // Only read file paths (do NOT eager-load file contents) to avoid bundling all markdown
   const relModules = import.meta.glob('../content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, unknown>
   const absModules = import.meta.glob('/content/**/*.md', { query: '?raw', import: 'default' }) as Record<string, unknown>
   const entries = [...Object.keys(relModules), ...Object.keys(absModules)]
   const set = new Set<string>()
   for (const p of entries) {
-    // '/src/content/<collection>/.../file.md' 또는 '../content/<collection>/...' 같은 경로를 정규화합니다.
+    // Normalize path like '/src/content/<collection>/.../file.md' or '../content/<collection>/...'
     const idx = p.indexOf('/content/')
     if (idx === -1) continue
     const after = p.slice(idx + '/content/'.length)

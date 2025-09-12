@@ -177,6 +177,13 @@ code { background: transparent; padding: 0; border-radius: 0; }
 .insight-content header { display: none; }
 .insight-content h3 { margin: 0; font-size: 1rem; }
 
+/* Selected node highlight when its document is open in the insight drawer */
+.node.selected { 
+  stroke: #ffd54f !important; 
+  stroke-width: 4px !important; 
+  filter: drop-shadow(0 0 8px #ffd54f); 
+}
+
 /* Close button that sits over the content (top-right) so it appears next to the large title inside the drawer */
 .insight-close {
   position: absolute;
